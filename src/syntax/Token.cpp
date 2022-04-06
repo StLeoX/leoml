@@ -17,16 +17,18 @@ const std::unordered_map<int, const char *> Token::TagMap{
         {';',          ";"},
         {'=',          "="},
 
+        {Token::Dsemi, ";;"},
         {Token::Le,    "<="},
         {Token::Ge,    ">="},
         {Token::Eq,    "=="},
         {Token::Ne,    "!="},
-        {Token::True,  "true"},
-        {Token::False, "false"},
-        {Token::Nan,   "NaN"},
 };
 
 const std::unordered_map<std::string, int> Token::KwMap{
+        {"NaN",   Token::Nan},
+        {"true",  Token::True},
+        {"false", Token::False},
+
         {"let",   Token::Let},
         {"fun",   Token::Fun},
         {"if",    Token::If},
@@ -44,6 +46,12 @@ const std::unordered_map<std::string, int> Token::KwMap{
 std::ostream &operator<<(std::ostream &os, const Token &token) {
     os << "tag: " << token.tag << " str: " << token.str;
     return os;
+}
+
+const char *Token::Lookup(int tag) {
+    auto ret = TagMap.find(tag);
+    if (ret == TagMap.end()) { return nullptr; }
+    return ret->second;
 }
 
 TokenSequence TokenSequence::GetLine() {
@@ -80,8 +88,6 @@ const Token *TokenSequence::Peek() const {
     } else if (_parser && (*_begin)->tag == Token::Var) {
         auto filename = Token::New(*(*_begin));
         filename->tag = Token::String;
-        // todo: func call
-//        filename->setStr("\"" + parser_->CurFunc()->Name() + "\"");
         *_begin = filename;
     }
     return *_begin;
@@ -98,7 +104,7 @@ const Token *TokenSequence::Expect(int expect) {
 }
 
 
-void TokenSequence::Output(std::ostream& out) const {
+void TokenSequence::Output(std::ostream &out) const {
     unsigned lastLine = 0;
     auto ts = *this;
     while (!ts.Empty()) {

@@ -44,10 +44,10 @@ static void Tokenize() {
     for (auto source:source_list) {
         auto name = GetName(source);
         TokenSequence ts = TokenSequence();
-        Lexer lexer = Lexer::New(LoadFile(source), &name);
+        Lexer* lexer = Lexer::New(LoadFile(source), &name);
         if (output_dir != "") {
             auto outpath = std::filesystem::absolute(output_dir + "/" + name + "tts.txt");
-            lexer.Tokenize(ts);
+            lexer->Tokenize(ts);
             std::ofstream out(outpath);
             ts.Output(out);
         } else { ts.Output(std::cout); }

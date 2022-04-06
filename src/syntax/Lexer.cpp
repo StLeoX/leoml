@@ -4,42 +4,9 @@
 
 #include "Lexer.h"
 
-
-/// Aux
-int Lexer::Next() {
-    int c = Peek();
-    _p++;
-    if (c == '\n') {
-        _loc.line++;
-        _loc.column = 1;
-        _loc.lineBegin = _p;
-    } else {
-        _loc.column++;
-    }
-    return c;
-}
-
-int Lexer::Peek() {
-    int c = (uint8_t) (*_p);
-    if (c == '\\' && _p[1] == '\n') {
-        _p += 2;
-        _loc.line++;
-        _loc.column = 1;
-        _loc.lineBegin = _p;
-        return Peek();
-    }
-    return c;
-}
-
-void Lexer::PutBack() {
-    int c = *--_p;
-    if (c == '\n' && _p[-1] == '\\') {
-        _loc.line--;
-        _p--;
-    } else if (c == '\n') {
-        _loc.line--;
-    } else {
-        _loc.column--;
+void Lexer::BuildKwTrie() {
+    for (auto kw:Token::ListKws()) {
+        _kwTrie.insert(kw, strlen(kw));
     }
 }
 
@@ -58,6 +25,92 @@ Token *Lexer::MakeNewLine() {
     _token.tag = '\n';
     _token.str = std::string(_p, _p + 1);
     return Token::New(_token);
+}
+
+Token *Lexer::Scan() {
+    SkipWhiteSpace();
+    Mark();
+    // scan newline
+    if (Test('\n')) {
+        auto ret = MakeNewLine();
+        Next();
+        return ret;
+    }
+    auto c = Next();
+    // scan keywords
+    if (_kwTrie.first(c)) {
+        auto kw = ScanKw();
+        if (kw != nullptr) return kw;
+    }
+
+    switch (c) {
+        case ')':
+        case '+':
+        case '-':
+        case '*':
+        case '/':
+            return MakeToken(c);
+        case '(':
+            if (Test('*')) {
+                SkipComment();
+                return Scan();
+            }
+            return MakeToken('(');
+        case ';':
+            if (Try(';')) return MakeToken(Token::Semi);
+            else return MakeToken(Token::Dsemi);
+        case '<':
+            if (Try('=')) return MakeToken(Token::Le);
+            else return MakeToken(Token::Lt);
+        case '>':
+            if (Try('=')) return MakeToken(Token::Ge);
+            else return MakeToken(Token::Gt);
+        case '=':
+            if (Try('=')) return MakeToken(Token::Eq);
+            else return MakeToken(Token::LetAssign);
+        case '!':
+            if (Try('=')) return MakeToken(Token::Ne);
+            else {
+                CompilePanic("Not Support Deref Currently.");
+                return nullptr;
+            }
+        case '0'...'9':
+            return SkipNumber();
+        case '\"':
+            return SkipString();
+        case 'a'...'z':
+        case 'A'...'Z':
+        case '_':
+            return SkipIdent();
+        case '\0':
+            return MakeToken(Token::END);
+        default:
+            return MakeToken(Token::INVALID);
+    }
+}
+
+Token *Lexer::ScanKw() {
+    std::string word;
+    while (!Empty())word.push_back(Next());
+    if (_kwTrie.find(word.c_str(), strlen(word.c_str()))) {
+        return MakeToken(Token::Lookup(word));
+    }
+    return nullptr;// not match keyword
+}
+
+Token *Lexer::ScanIdent() {
+    std::string word;
+    while (!Empty()) word.push_back(Next());
+    return MakeToken(Token::Var);
+}
+
+Token *Lexer::ScanString(std::string &word) {
+    Next();
+    word.resize(0);
+    while (!Test('\"')) {
+        word.push_back(Next());
+    }
+    return MakeToken(Token::String);
 }
 
 Token *Lexer::SkipIdent() {
@@ -123,61 +176,6 @@ void Lexer::SkipComment() {
     CompilePanic("comment");
 }
 
-Token *Lexer::Scan() {
-    SkipWhiteSpace();
-    Mark();
-    if (Test('\n')) {
-        auto ret = MakeNewLine();
-        Next();
-        return ret;
-    }
-    auto c = Next();
-    switch (c) {
-        case ')':
-        case '+':
-        case '-':
-        case '*':
-        case '/':
-            return MakeToken(c);
-        case '(':
-            if (Test('*')) {
-                SkipComment();
-                return Scan();
-            }
-            return MakeToken('(');
-        case '<':
-            if (Try('=')) return MakeToken(Token::Le);
-            else return MakeToken(Token::Lt);
-        case '>':
-            if (Try('=')) return MakeToken(Token::Ge);
-            else return MakeToken(Token::Gt);
-        case '=':
-            if (Try('=')) return MakeToken(Token::Eq);
-            else return MakeToken(Token::LetAssign);
-        case '!':
-            if (Try('=')) return MakeToken(Token::Ne);
-            else {
-                CompilePanic("Not Support Deref Currently.");
-                return nullptr;
-            };
-        case '0'...'9':
-            return SkipNumber();
-        case '\"':
-            return SkipString();
-        case 'a'...'t':
-        case 'v'...'z':
-        case 'A'...'K':
-        case 'M' ... 'T':
-        case 'V' ... 'Z':
-        case '_':
-            return SkipIdent();
-        case '\0':
-            return MakeToken(Token::END);
-        default:
-            return MakeToken(Token::INVALID);
-    }
-}
-
 void Lexer::Tokenize(TokenSequence &ts) {
     while (true) {
         auto token = Scan();
@@ -195,3 +193,40 @@ void Lexer::Tokenize(TokenSequence &ts) {
     }
 }
 
+/// Aux
+int Lexer::Next() {
+    int c = Peek();
+    _p++;
+    if (c == '\n') {
+        _loc.line++;
+        _loc.column = 1;
+        _loc.lineBegin = _p;
+    } else {
+        _loc.column++;
+    }
+    return c;
+}
+
+int Lexer::Peek() {
+    int c = (uint8_t) (*_p);
+    if (c == '\\' && _p[1] == '\n') {
+        _p += 2;
+        _loc.line++;
+        _loc.column = 1;
+        _loc.lineBegin = _p;
+        return Peek();
+    }
+    return c;
+}
+
+void Lexer::PutBack() {
+    int c = *--_p;
+    if (c == '\n' && _p[-1] == '\\') {
+        _loc.line--;
+        _p--;
+    } else if (c == '\n') {
+        _loc.line--;
+    } else {
+        _loc.column--;
+    }
+}

@@ -16,6 +16,7 @@
 #include <cstdarg>
 #include <fstream>
 #include <ostream>
+#include <vector>
 
 class Parser;
 
@@ -63,6 +64,7 @@ public:
         NEW_LINE = '\n',
 
         // multi char token
+        Dsemi,
         Le,
         Ge,
         Eq,
@@ -93,9 +95,9 @@ public:
         String,
 
         // aux token kind
-        INVALID,
-        END,
-        NOTOKEN = -1,
+        INVALID = -3,
+        NOTOKEN = -2,
+        END = -1,
     };
 
     int tag;
@@ -119,10 +121,19 @@ public:
 
     virtual ~Token() = default;
 
-    static const char *Lookup(int tag_) {
-        auto ret = TagMap.find(tag_);
-        if (ret == TagMap.end()) { return nullptr; }
+    // Aux: KwMap & TagMap
+    static const char *Lookup(int tag);
+
+    static int Lookup(std::string kw) {
+        auto ret = KwMap.find(kw);
+        if (ret == KwMap.end()) return Token::INVALID;
         return ret->second;
+    }
+
+    static std::vector<const char *> ListKws() {
+        std::vector<const char *> ret{};
+        for (auto item:KwMap) ret.push_back(item.first.c_str());
+        return ret;
     }
 
     bool IsEOF() const { return tag == Token::END; }

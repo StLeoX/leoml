@@ -1,7 +1,7 @@
 # leoml
 
 ## Intro
-StLeoX's OCaml-like language compiler. Only FrontEnd currently.
+StLeoX's OCaml-syntax-like language compiler. Only FrontEnd currently.
 
 BackEnd: Maybe an Interpreter?
 
@@ -35,7 +35,7 @@ If no output file, then print to the stdout.
 >
 > let, fun
 >
-> if, then, else,
+> if, then, else
 >
 > while, do ,end
 >
@@ -53,6 +53,7 @@ decllist ::= decl
            | decllist decl
 		  
 decl ::= let var (varlist) = exp ;;
+       | exp ;;
 
 varlist ::= var
           | varlist var
@@ -74,21 +75,22 @@ expb ::= ( exp )
        | expb < expb
        | expb <= expb
        | expb == expb
+       | epxb != epxb
        | expb > expb
        | expb >= expb
        | cons expb expb # cons
        | car expb # car
        | cdr expb # cdr
        | empty expb # empty
-       | expb; expb
+       | expb; expb # compound
 
 # exp atom
-expa ::= ( )
+expa ::= var
        | intl
        | floatl
        | booll
+       | stringl
        | NaN
-       | var
        | if exp then exp else exp
        | let var = exp
        | while exp do exp end
@@ -97,7 +99,7 @@ expa ::= ( )
 intl ::= [0-9]+
 floatl ::= [0-9]*.[0-9]+
 booll ::= true | false
-
+stringl ::= ".*"
 
 var ::= [a-zA-Z][a-zA-Z_0-9]*
 comment ::= (* ... *)
@@ -136,7 +138,17 @@ comment ::= (* ... *)
 
 Lexer:
 
-- Support using the '\\' to start a new line if you didn't finish current line yet.
+- Support using the '\\' to start a `newline` if you didn't finish current line yet.
 
 - Only digit and float are supported. (No 0x, 0b, 0o numbers).
 - No distinct between character and string. (Only string supported, like JS).
+
+- No Pointer! No Pointer! No Pointer! (Everything is a reference?)
+
+
+
+### Reflection
+
+1. 其实这个KwTrie冗余，因为已经存在KwMap。这个KwTrie唯一的作用可能是求First，但同样可以使用KwMap完成。
+
+2. 为什么相应的类都需要New函数？因为调用构造函数生成在stack上，而调用New通过new生成在heap上，避免爆栈。

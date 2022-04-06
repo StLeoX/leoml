@@ -113,12 +113,4 @@ void CompileError(const Token *tok, const char *format, ...) {
 }
 
 
-//void CompileError(const Expr *expr, const char *format, ...) {
-//    va_list args;
-//    va_start(args, format);
-//    VError(expr->Tok()->loc, format, args);
-//    va_end(args);
-//}
-
-
 #endif // LEOML_ERROR_H

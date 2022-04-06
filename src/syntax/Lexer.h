@@ -6,33 +6,72 @@
 #define LEOML_LEXER_H
 
 #include <cassert>
-
+#include <cstring>
 #include "Token.h"
 #include "error.hpp"
+
+/// Trie
+// To match keywords.
+struct Trie {
+    int nex[100000][26], cnt;
+    bool exist[100000];
+
+    Trie() = default;
+
+    void insert(const char *s, int l) {
+        int p = 0;
+        for (int i = 0; i < l; i++) {
+            int c = s[i] - 'a';
+            if (!nex[p][c]) nex[p][c] = ++cnt;
+            p = nex[p][c];
+        }
+        exist[p] = 1;
+    }
+
+    bool find(const char *s, int l) {
+        int p = 0;
+        for (int i = 0; i < l; i++) {
+            int c = s[i] - 'a';
+            if (!nex[p][c]) return 0;
+            p = nex[p][c];
+        }
+        return exist[p];
+    }
+
+    bool first(int c) {
+        int j = c - 'a';
+        if (!nex[0][j]) return 0;
+        return exist[nex[0][j]];
+    }
+
+};
 
 /// Lexer
 class Lexer {
 private:
-    const std::string *_text;
-    SourceLocation _loc;
-    Token _token = Token(Token::END); // current
-    const char *_p;
+    const std::string *_text;  // source text
+    const char *_p;  // text offset
+    SourceLocation _loc{}; // location
+    Token _token{Token::END}; // current token
+    Trie _kwTrie{}; // keywords trie
 
-public:
-    static Lexer New(const std::string *text, const std::string *filename) {
-        return Lexer(text, filename);
-    }
-
-    explicit Lexer(const Token *token) : Lexer(&token->str, token->loc) {}
+    Lexer(const Token *token) : Lexer(&token->str, token->loc) {}
 
     Lexer(const std::string *text, const SourceLocation &loc) : Lexer(text, loc.filename, loc.line, loc.column) {}
 
-    explicit Lexer(const std::string *text, const std::string *filename = nullptr, unsigned line = 1,
-                   unsigned column = 1) {
+    Lexer(const std::string *text, const std::string *filename = nullptr, unsigned line = 1,
+          unsigned column = 1) {
         _token = Token(Token::END);
         _text = text;
         _p = &(*_text)[0];
         _loc = {filename, _p, line, 1};
+    }
+
+public:
+    static Lexer *New(const std::string *text, const std::string *filename) {
+        auto ret = new Lexer(text, filename);
+        ret->BuildKwTrie();
+        return ret;
     }
 
     virtual ~Lexer() = default;
@@ -45,12 +84,24 @@ public:
     void Tokenize(TokenSequence &ts);
 
 private:
-    //
-    Token *Scan();
+    // build kw trie
+    void BuildKwTrie();
 
     Token *MakeToken(int tag);
 
     Token *MakeNewLine();
+
+    // main Scan
+    Token *Scan();
+
+    // scan keyword
+    Token *ScanKw();
+
+    // scan ident
+    Token *ScanIdent();
+
+    // scan string
+    Token *ScanString(std::string& word);
 
     // var
     // var ::= [a-zA-Z_][a-zA-Z_0-9]*
@@ -59,7 +110,7 @@ private:
     // int & float
     Token *SkipNumber();
 
-    // string
+    // string, support newline
     Token *SkipString();
 
     void SkipWhiteSpace();
