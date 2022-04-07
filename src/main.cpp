@@ -1,6 +1,5 @@
 #include <fstream>
 #include <iostream>
-#include <cstdio>
 #include <list>
 #include <filesystem>
 #include "syntax/Lexer.h"
@@ -10,9 +9,9 @@
 
 std::string source_path = "";
 std::string output_dir = "";
-static std::list<std::string> source_list;
+std::list<std::string> source_list{};
 
-static void Usage() {
+void Usage() {
     printf("Usage: leoml [-o <output>] [options] <source>\n"
            "Options: \n"
            "\t-h      Print this help message.\n"
@@ -22,13 +21,19 @@ static void Usage() {
     exit(0);
 }
 
-static std::string GetName(const std::string &path) {
+///
+/// \param filepath
+/// \return filename
+std::string GetName(const std::string &path) {
     auto pos = path.rfind('/');
     if (pos == std::string::npos)
         return path;
     return path.substr(pos + 1);
 }
 
+///
+/// \param filepath
+/// \return content
 std::string *LoadFile(const std::string &filepath) {
     FILE *f = fopen(filepath.c_str(), "r");
     if (!f) CompileError("%s: No such file or directory", filepath.c_str());
@@ -40,42 +45,50 @@ std::string *LoadFile(const std::string &filepath) {
     return text;
 }
 
-static void Tokenize() {
+void Tokenize() {
+    printf("tokenizing\n");
     for (auto source:source_list) {
         auto name = GetName(source);
         TokenSequence ts = TokenSequence();
-        Lexer* lexer = Lexer::New(LoadFile(source), &name);
+        Lexer *lexer = Lexer::New(LoadFile(source), &name);
+        lexer->Tokenize(ts);
         if (output_dir != "") {
             auto outpath = std::filesystem::absolute(output_dir + "/" + name + "tts.txt");
-            lexer->Tokenize(ts);
-            std::ofstream out(outpath);
+            std::ofstream out{outpath};
             ts.Output(out);
         } else { ts.Output(std::cout); }
     }
 }
 
-static void Parse() {
+void Parse() {
     CompilePanic("");
 }
 
 int main(int argc, char *argv[]) {
-    if (argc < 2)Usage();
-    for (int i = 0; i < argc; ++i) {
-        if (argv[i][0] != '-') {
-            source_path = std::string(argv[i]);
-            source_list.push_back(source_path);
+    if (argc < 2) Usage();
+    if (argc >= 5) {
+        assert('o' == argv[argc - 2][1]);
+        output_dir = argv[argc - 1];
+        for (int i = 2; i < argc - 2; ++i) {
+            source_list.push_back(argv[i]);
         }
-        switch (argv[i][1]) {
-            case 'h':
-                Usage();
-                break;
-            case 'l':
-                Tokenize();
-            case 'p':
-                Parse();
-            case 'o':
-                output_dir = std::string(argv[i + 1]);
-        }
+    }
+    for (int i = 2; i < argc; ++i) {
+        source_list.push_back(argv[i]);
+    }
+
+    switch (argv[1][1]) {
+        case 'h':
+            Usage();
+            break;
+        case 'l':
+            Tokenize();
+            break;
+        case 'p':
+            Parse();
+            break;
+        default:
+            break;
     }
 
     return 0;

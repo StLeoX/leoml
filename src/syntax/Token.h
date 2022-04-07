@@ -57,6 +57,7 @@ public:
         Sub = '-',
         Mul = '*',
         Div = '/',
+        Comma = ',',
         Semi = ';',
         Lt = '<',
         Gt = '>',
@@ -64,28 +65,30 @@ public:
         NEW_LINE = '\n',
 
         // multi char token
-        Dsemi,
-        Le,
-        Ge,
-        Eq,
-        Ne,
-        True,
-        False,
-        Nan,
+        Dsemi = 130,// ";;"
+        Le,// "<="
+        Ge,// ">="
+        Eq,// "=="
+        Ne,// "!="
+        True,// "true"
+        False,// "false"
+        Unit,// "()"
 
         // Keywords
-        Let,
-        Fun,
-        If,
-        Then,
-        Else,
-        While,
-        Do,
-        End,
-        Cons,
-        Car,
-        Cdr,
-        Empty,
+        Let = 140,// "let"
+        In,// "in"
+        If,// "if"
+        Then,// "then"
+        Else,// "else"
+        While,// "while"
+        Do,// "do"
+        Done,// "done"
+        Fst,// "fst"
+        Snd,// "snd"
+
+        // Keywords_todo
+        // Rec,
+        // Fun,
 
         // data type enum
         Var,
@@ -97,7 +100,7 @@ public:
         // aux token kind
         INVALID = -3,
         NOTOKEN = -2,
-        END = -1,
+        END = -1,// also START
     };
 
     int tag;
@@ -122,15 +125,19 @@ public:
     virtual ~Token() = default;
 
     // Aux: KwMap & TagMap
-    static const char *Lookup(int tag);
+    static const char *TagLookup(int tag);
 
-    static int Lookup(std::string kw) {
+    static int KwLookup(std::string kw) {
         auto ret = KwMap.find(kw);
         if (ret == KwMap.end()) return Token::INVALID;
         return ret->second;
     }
 
-    static std::vector<const char *> ListKws() {
+    static bool KwIs(std::string kw) {
+        return Token::INVALID != KwLookup(kw);
+    }
+
+    static std::vector<const char *> KwList() {
         std::vector<const char *> ret{};
         for (auto item:KwMap) ret.push_back(item.first.c_str());
         return ret;

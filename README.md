@@ -33,15 +33,25 @@ If no output file, then print to the stdout.
 
 > Keywords: 
 >
-> let, fun
+> let, and, in 
 >
-> if, then, else
+> if, then, else 
 >
-> while, do ,end
+> while, do, done
 >
-> true, false
+> true, false 
 >
-> cons, car, cdr, empty
+> fst, snd 
+>
+> 
+>
+> > Todo:
+> >
+> > rec, fun
+> >
+> > match, with
+> >
+> > for,to, do, done
 
 
 
@@ -52,11 +62,11 @@ program ::= decllist eof
 decllist ::= decl
            | decllist decl
 		  
-decl ::= let var (varlist) = exp ;;
+decl ::= let var ( varlist ) = exp ;;
        | exp ;;
 
 varlist ::= var
-          | varlist var
+          | varlist , var
 
 # exp
 exp ::= var explist
@@ -66,8 +76,7 @@ explist ::= expb
           | explist expb
 
 # exp base
-expb ::= ( exp )
-       | expa
+expb ::= expa
        | expb + expb
        | expb - expb
        | expb * expb
@@ -78,24 +87,26 @@ expb ::= ( exp )
        | epxb != epxb
        | expb > expb
        | expb >= expb
-       | cons expb expb # cons
-       | car expb # car
-       | cdr expb # cdr
-       | empty expb # empty
+       | ( expb, expb ) #cons
+       | fst ( expb ) # fst
+       | snd ( expb ) # snd
        | expb; expb # compound
 
 # exp atom
 expa ::= var
-       | intl
-       | floatl
-       | booll
-       | stringl
-       | NaN
+       | constant
        | if exp then exp else exp
-       | let var = exp
-       | while exp do exp end
+       | let var = exp in exp
+       | while exp do exp done
+       | (exp)
 
-# literal
+# constant(literal)
+constant ::= intl
+           | floatl
+           | booll
+           | stringl
+           | ()
+
 intl ::= [0-9]+
 floatl ::= [0-9]*.[0-9]+
 booll ::= true | false
@@ -145,10 +156,24 @@ Lexer:
 
 - No Pointer! No Pointer! No Pointer! (Everything is a reference?)
 
+Type System:
+
+- `Pair` Type ( dual-element list) supported, that means supporting:
+  - construction: ( expb, epxb )
+  - first element access: fst ( expb )
+  - second elemant access: snd ( expb )
+
+- Not supporting mutable data structure , that means no `refs`, no `arrays`.
+
+
+
+
+
 
 
 ### Reflection
 
 1. 其实这个KwTrie冗余，因为已经存在KwMap。这个KwTrie唯一的作用可能是求First，但同样可以使用KwMap完成。
-
 2. 为什么相应的类都需要New函数？因为调用构造函数生成在stack上，而调用New通过new生成在heap上，避免爆栈。
+3. 注意区分decl里面的let 和 expa里面的let...in...，两者仅仅是复用关键字let。
+4. 从Lexer的角度来看，所谓的Keywords不就是一种特殊的Ident么。

@@ -10,41 +10,6 @@
 #include "Token.h"
 #include "error.hpp"
 
-/// Trie
-// To match keywords.
-struct Trie {
-    int nex[100000][26], cnt;
-    bool exist[100000];
-
-    Trie() = default;
-
-    void insert(const char *s, int l) {
-        int p = 0;
-        for (int i = 0; i < l; i++) {
-            int c = s[i] - 'a';
-            if (!nex[p][c]) nex[p][c] = ++cnt;
-            p = nex[p][c];
-        }
-        exist[p] = 1;
-    }
-
-    bool find(const char *s, int l) {
-        int p = 0;
-        for (int i = 0; i < l; i++) {
-            int c = s[i] - 'a';
-            if (!nex[p][c]) return 0;
-            p = nex[p][c];
-        }
-        return exist[p];
-    }
-
-    bool first(int c) {
-        int j = c - 'a';
-        if (!nex[0][j]) return 0;
-        return exist[nex[0][j]];
-    }
-
-};
 
 /// Lexer
 class Lexer {
@@ -53,7 +18,6 @@ private:
     const char *_p;  // text offset
     SourceLocation _loc{}; // location
     Token _token{Token::END}; // current token
-    Trie _kwTrie{}; // keywords trie
 
     Lexer(const Token *token) : Lexer(&token->str, token->loc) {}
 
@@ -70,7 +34,6 @@ private:
 public:
     static Lexer *New(const std::string *text, const std::string *filename) {
         auto ret = new Lexer(text, filename);
-        ret->BuildKwTrie();
         return ret;
     }
 
@@ -84,9 +47,6 @@ public:
     void Tokenize(TokenSequence &ts);
 
 private:
-    // build kw trie
-    void BuildKwTrie();
-
     Token *MakeToken(int tag);
 
     Token *MakeNewLine();

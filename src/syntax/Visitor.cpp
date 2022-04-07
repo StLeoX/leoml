@@ -55,10 +55,10 @@ void TreeVisitor<T>::VisitExpbUnary(ExpbUnary *expbUnary) {
         case Token::Cons:
             CompilePanic("unimplemented unary operation cons");
             break;
-        case Token::Car:
+        case Token::Fst:
             CompilePanic("unimplemented unary operation car");
             break;
-        case Token::Cdr:
+        case Token::Snd:
             CompilePanic("unimplemented unary operation cdr");
             break;
         case Token::Empty:

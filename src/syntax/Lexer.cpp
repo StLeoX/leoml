@@ -4,12 +4,6 @@
 
 #include "Lexer.h"
 
-void Lexer::BuildKwTrie() {
-    for (auto kw:Token::ListKws()) {
-        _kwTrie.insert(kw, strlen(kw));
-    }
-}
-
 Token *Lexer::MakeToken(int tag) {
     _token.tag = tag;
     auto &str = _token.str;
@@ -37,20 +31,18 @@ Token *Lexer::Scan() {
         return ret;
     }
     auto c = Next();
-    // scan keywords
-    if (_kwTrie.first(c)) {
-        auto kw = ScanKw();
-        if (kw != nullptr) return kw;
-    }
 
+    // scan token
     switch (c) {
         case ')':
         case '+':
         case '-':
         case '*':
         case '/':
+        case ',':
             return MakeToken(c);
         case '(':
+            if (Try(')')) return MakeToken(Token::Unit);
             if (Test('*')) {
                 SkipComment();
                 return Scan();
@@ -92,8 +84,8 @@ Token *Lexer::Scan() {
 Token *Lexer::ScanKw() {
     std::string word;
     while (!Empty())word.push_back(Next());
-    if (_kwTrie.find(word.c_str(), strlen(word.c_str()))) {
-        return MakeToken(Token::Lookup(word));
+    if (Token::KwIs(word)) {
+        return MakeToken(Token::KwLookup(word));
     }
     return nullptr;// not match keyword
 }
@@ -120,7 +112,10 @@ Token *Lexer::SkipIdent() {
         c = Next();
     }
     PutBack();
-    return MakeToken(Token::Var);
+    Token *ret = MakeToken(Token::Var);
+    // kw IS-A ident
+    if (Token::KwIs(ret->str)) ret->tag = Token::KwLookup(ret->str);
+    return ret;
 }
 
 Token *Lexer::SkipNumber() {
@@ -140,12 +135,13 @@ Token *Lexer::SkipNumber() {
 
 Token *Lexer::SkipString() {
     auto c = Next();
-    while (c != '\"') {
-        if (c == '\\') Next();
+    int len_limit = 128;
+    while (c != '\"' && len_limit) {
         c = Next();
+        len_limit--;
     }
-    if (c != '\"') {
-        CompileError(_loc, "unterminated string literal");
+    if (len_limit <= 0) {
+        CompileError(_loc, "unterminated string literal, more than 128 char");
     }
     return MakeToken(Token::String);
 }

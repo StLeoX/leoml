@@ -12,9 +12,10 @@ const std::unordered_map<int, const char *> Token::TagMap{
         {'-',          "-"},
         {'*',          "*"},
         {'/',          "/"},
+        {',',          ","},
+        {';',          ";"},
         {'<',          "<"},
         {'>',          ">"},
-        {';',          ";"},
         {'=',          "="},
 
         {Token::Dsemi, ";;"},
@@ -22,33 +23,33 @@ const std::unordered_map<int, const char *> Token::TagMap{
         {Token::Ge,    ">="},
         {Token::Eq,    "=="},
         {Token::Ne,    "!="},
+        {Token::Unit,  "()"},
 };
 
 const std::unordered_map<std::string, int> Token::KwMap{
-        {"NaN",   Token::Nan},
         {"true",  Token::True},
         {"false", Token::False},
 
         {"let",   Token::Let},
-        {"fun",   Token::Fun},
+        {"in",    Token::In},
         {"if",    Token::If},
         {"then",  Token::Then},
         {"else",  Token::Else},
         {"while", Token::While},
         {"do",    Token::Do},
-        {"end",   Token::End},
-        {"cons",  Token::Cons},
-        {"car",   Token::Car},
-        {"cdr",   Token::Cdr},
-        {"empty", Token::Empty},
+        {"done",  Token::Done},
+        {"fst",   Token::Fst},
+        {"snd",   Token::Snd},
 };
 
 std::ostream &operator<<(std::ostream &os, const Token &token) {
-    os << "tag: " << token.tag << " str: " << token.str;
+    os << "tag: " << token.tag <<
+       "\tstr: " << token.str <<
+       "\tloc: " << "(" << token.loc.line << ", " << token.loc.column << ")";
     return os;
 }
 
-const char *Token::Lookup(int tag) {
+const char *Token::TagLookup(int tag) {
     auto ret = TagMap.find(tag);
     if (ret == TagMap.end()) { return nullptr; }
     return ret->second;
@@ -98,26 +99,18 @@ const Token *TokenSequence::Expect(int expect) {
     auto token = Peek();
     if (!Try(expect)) {
         CompileError(token, "'%s' expected, but got '%s'",
-                     Token::Lookup(expect), token->str.c_str());
+                     Token::TagLookup(expect), token->str.c_str());
     }
     return token;
 }
 
 
 void TokenSequence::Output(std::ostream &out) const {
-    unsigned lastLine = 0;
     auto ts = *this;
     while (!ts.Empty()) {
         auto token = ts.Next();
-        if (lastLine != token->loc.line) {
-            out << "\n";
-            for (unsigned i = 0; i < token->loc.column; ++i)
-                out << " ";
-        }
-        out << token;
-        lastLine = token->loc.line;
+        out << *token << std::endl;
     }
-    out << "\n";
 }
 
 

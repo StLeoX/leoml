@@ -52,7 +52,7 @@ class ExpaIf;
 
 class ExpaWhile;
 
-class ExpaLet;// todo: needed?
+class ExpaLet;
 
 
 /// Program
@@ -79,9 +79,9 @@ protected:
     Decl() {};
 
 public:
-    VarList varlist;
+    VarList varlist{};
 
-    static Decl *New();
+    static Decl *New() { return new * Decl(); };
 
     virtual ~Decl() {};
 
@@ -116,7 +116,7 @@ protected:
 public:
     virtual ~Exp() {};
 
-    inline const Token *GetToken() { return _root; }
+    Token *GetToken() { return _root; }
 };
 
 /// Expb
@@ -204,7 +204,9 @@ private:
     }
 
 public:
-    static ExpbCompound *New(int op, Expb *lhs, Expb *rhs);
+    static ExpbCompound *New(const Token *token, Expb *lhs, Expb *rhs) {
+        return new ExpbCompound(token, token->tag, lhs, rhs);
+    }
 
 };
 
@@ -219,7 +221,7 @@ protected:
 
 /// Expa Constant
 /*
- * Constant ::= intl | floatl | booll | stringl | NaN
+ * Constant ::= intl | floatl | booll | stringl | Unit
  * */
 class ExpaConstant : public Expa {
     template<typename T> friend
@@ -229,19 +231,32 @@ private:
     union {
         int _ival;
         float _fval;
+        bool _bval;
         const std::string &_sval;
     };
 
-    ExpaConstant(const Token *token, int val) : Expa(token), _ival(val) {}
+    ExpaConstant(const Token *token, int val) : Expa(token), _ival(val) {
+        assert(Token::Int == token->tag);
+    }
 
-    ExpaConstant(const Token *token, float val) : Expa(token), _fval(val) {}
+    ExpaConstant(const Token *token, float val) : Expa(token), _fval(val) {
+        assert(Token::Float == token->tag);
+    }
 
-    ExpaConstant(const Token *token, const std::string &val) : Expa(token), _sval(val) {}
+    ExpaConstant(const Token *token, bool bval) : Expa(token), _bval(bval) {
+        assert(Token::Bool == token->tag);
+    }
+
+    ExpaConstant(const Token *token, const std::string &val) : Expa(token), _sval(val) {
+        assert(Token::String = token->tag);
+    }
 
 public:
     static ExpaConstant *New(const Token *token, int val) { return new ExpaConstant(token, val); }
 
     static ExpaConstant *New(const Token *token, float val) { return new ExpaConstant(token, val); }
+
+    static ExpaConstant *New(const Token *token, bool val) { return new ExpaConstant(token, val); }
 
     static ExpaConstant *New(const Token *token, const std::string &val) { return new ExpaConstant(token, val); }
 
@@ -260,10 +275,12 @@ private:
     Exp *_then;
     Exp *_els;
 
-    ExpaIf(Exp *cond, Exp *then, Exp *els) : _cond(cond), _then(then), _els(els) {}
+    ExpaIf(const Token *token, Exp *cond, Exp *then, Exp *els) : Expa(token), _cond(cond), _then(then), _els(els) {}
 
 public:
-    static ExpaIf *New(Exp *cond, Exp *then, Exp *els = nullptr);
+    static ExpaIf *New(const Token *token, Exp *cond, Exp *then, Exp *els = nullptr) {
+        return new ExpaIf(token, cond, then, els);
+    };
 };
 
 /// Expa while
@@ -275,14 +292,29 @@ private:
     Exp *_cond;
     Exp *_body;
 
-    ExpaWhile(Exp *cond, Exp *body) : _cond(cond), _body(body) {}
+    ExpaWhile(const Token *token, Exp *cond, Exp *body) : Expa(token), _cond(cond), _body(body) {}
 
 public:
-    static ExpaWhile *New(Exp *cond, Exp *body);
+    static ExpaWhile *New(const Token *token, Exp *cond, Exp *body) { return new ExpaWhile(token, cons, body); }
 };
 
 /// Expa let
 class ExpaLet : public Expa {
+    template<typename T> friend
+    class TreeVisitor;
+
+private :
+    Var *_var;
+    Exp *_let;
+    Exp *_in;
+
+    ExpaLet(const Token *token, Var *var, Exp *let, Exp *in) : Expa(token), _var(var), _let(let), _in(in) {}
+
+public:
+    static ExpaLet *New(const Token *token, Var *var, Exp *let, Exp *in) {
+        return neww
+        ExpaLet(token, var, let, in);
+    }
 };
 
 
