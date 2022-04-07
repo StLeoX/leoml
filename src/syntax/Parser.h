@@ -35,7 +35,7 @@ public:
 private:
     void ParseDecl(Decl *decl);
 
-    void ParseExp(Exp *exp);
+    Exp *ParseExp();
 
     /// Expb
     Expb *ParseExpb(Expb *expb);
@@ -53,14 +53,14 @@ private:
      *        | floatl
      *        | booll
      *        | stringl
-     *        | NaN
+     *        | Unit
      *        | if exp then exp else exp
      *        | let var = exp
      *        | while exp do exp end
      * */
     Expa *ParseExpa(Expa *expa);
 
-    Expa *ParseVar(Var *var);
+    Var *ParseVar(const Token *token);
 
     /// Parse Constant
     /*
@@ -74,11 +74,20 @@ private:
 
     ExpaConstant *ParseString(const Token *token);
 
-    ExpaIf *ParseExpaIf(Expa *expaIf);
+    /*
+     * ExpaIf ::= if exp then exp [else exp]
+     * */
+    ExpaIf *ParseExpaIf();
 
-    ExpaWhile ParseExpaWhile(Expa *expaWhile);
+    /*
+     * ExpaWhile ::= while exp do exp done
+     * */
+    ExpaWhile *ParseExpaWhile();
 
-
+    /*
+     * ExpaLet ::= let var = exp [and var = exp]* in exp
+     * */
+    ExpaLet *ParseExpaLet();
 };
 
 

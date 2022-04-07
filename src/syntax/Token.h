@@ -76,6 +76,7 @@ public:
 
         // Keywords
         Let = 140,// "let"
+        And,//"and"
         In,// "in"
         If,// "if"
         Then,// "then"
@@ -166,20 +167,20 @@ public:
     TokenSequence() : tokenList(new TokenList()),
                       _begin(tokenList->begin()), _end(tokenList->end()) {}
 
-    explicit TokenSequence(Token *tok) {
+    explicit TokenSequence(Token *token) {
         TokenSequence();
-        InsertBack(tok);
+        InsertBack(token);
     }
 
-    explicit TokenSequence(TokenList *tokList)
-            : tokenList(tokList),
-              _begin(tokList->begin()),
-              _end(tokList->end()) {}
+    explicit TokenSequence(TokenList *tokenList)
+            : tokenList(tokenList),
+              _begin(tokenList->begin()),
+              _end(tokenList->end()) {}
 
-    TokenSequence(TokenList *tokList,
+    TokenSequence(TokenList *tokenList,
                   TokenList::iterator begin,
                   TokenList::iterator end)
-            : tokenList(tokList), _begin(begin), _end(end) {}
+            : tokenList(tokenList), _begin(begin), _end(end) {}
 
     ~TokenSequence() {}
 
@@ -200,8 +201,12 @@ public:
             *iter = Token::New(**iter);
     }
 
+    /// Expect
+    // Expect the Peek token. Expect its token kind.
     const Token *Expect(int expect);
 
+    /// Try
+    // Try the Peek token. If matching its token kind, then Next.
     bool Try(int tag) {
         if (Peek()->tag == tag) {
             Next();
@@ -210,6 +215,8 @@ public:
         return false;
     }
 
+    /// Test
+    // Test the Peek token, Check its token kind.
     bool Test(int tag) { return Peek()->tag == tag; }
 
     const Token *Next() {
@@ -223,6 +230,8 @@ public:
         return ret;
     }
 
+    /// PutBack
+    // Put back the prior Peek token.
     void PutBack() {
         assert(_begin != tokenList->begin());
         if (exceed_end > 0) {
@@ -234,9 +243,22 @@ public:
         }
     }
 
+    /// PeekPrior
+    // Get the prior Peek token. First Putback then Next.
+    const Token *PeekPrior() {
+        PutBack();
+        auto ret = Peek();
+        Next();
+        return ret;
+    }
+
+    /// Peek
+    // Get the current Peek token.
     const Token *Peek() const;
 
-    const Token *Peek2() {
+    /// PeekNext
+    // Get the next Peek token. First Next then PutBack.
+    const Token *PeekNext() {
         if (Empty())
             return Peek(); // Return the Token::END
         Next();

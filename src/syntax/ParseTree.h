@@ -25,18 +25,17 @@ protected:
 /// Language Hierarchy Model
 class Decl;  // Decl
 
-using DeclList
-std::list<Decl *>; // DeclList
+using DeclList = std::list<Decl *>; // DeclList
 
 class Var;
 
-using VarList
-std::list<Var *>; // Varlist
+using VarList = std::list<Var *>; // Varlist
 
 class Exp; // Exp
 
-using ExpList
-std::list<Exp *>; // Explist
+using ExpList = std::list<Exp *>; // Explist
+
+using VarExpList = std::list<std::pair<Var *, Exp *>>;
 
 class Expb; //Expb
 
@@ -79,9 +78,9 @@ protected:
     Decl() {};
 
 public:
-    VarList varlist{};
+    VarList varList{};
 
-    static Decl *New() { return new * Decl(); };
+    static Decl *New() { return new Decl(); };
 
     virtual ~Decl() {};
 
@@ -116,11 +115,11 @@ protected:
 public:
     virtual ~Exp() {};
 
-    Token *GetToken() { return _root; }
+    const Token *GetToken() { return _root; }
 };
 
 /// Expb
-class Expb : public ASTNode {
+class Expb : public Exp {
     template<typename T> friend
     class TreeVisitor;
 
@@ -156,7 +155,7 @@ public:
     }
 
     static ExpbBinary *New(const Token *token, int op, Expb *lhs, Expb *rhs) {
-        return new ExpbBinary(token, op, lhs, rhs)
+        return new ExpbBinary(token, op, lhs, rhs);
     };
 
     virtual ~ExpbBinary() {};
@@ -211,12 +210,16 @@ public:
 };
 
 /// Expa
-class Expa : public ASTNode {
+class Expa : public Exp {
     template<typename T> friend
     class TreeVisitor;
 
 protected:
     Expa(const Token *token) : Exp(token) {}
+
+public:
+    virtual void Accept(Visitor *visitor);
+
 };
 
 /// Expa Constant
@@ -232,7 +235,7 @@ private:
         int _ival;
         float _fval;
         bool _bval;
-        const std::string &_sval;
+        const std::string &_sval = "";
     };
 
     ExpaConstant(const Token *token, int val) : Expa(token), _ival(val) {
@@ -248,7 +251,7 @@ private:
     }
 
     ExpaConstant(const Token *token, const std::string &val) : Expa(token), _sval(val) {
-        assert(Token::String = token->tag);
+        assert(Token::String == token->tag);
     }
 
 public:
@@ -261,7 +264,6 @@ public:
     static ExpaConstant *New(const Token *token, const std::string &val) { return new ExpaConstant(token, val); }
 
 public:
-    static
 };
 
 
@@ -295,7 +297,7 @@ private:
     ExpaWhile(const Token *token, Exp *cond, Exp *body) : Expa(token), _cond(cond), _body(body) {}
 
 public:
-    static ExpaWhile *New(const Token *token, Exp *cond, Exp *body) { return new ExpaWhile(token, cons, body); }
+    static ExpaWhile *New(const Token *token, Exp *cond, Exp *body) { return new ExpaWhile(token, cond, body); }
 };
 
 /// Expa let
@@ -304,17 +306,18 @@ class ExpaLet : public Expa {
     class TreeVisitor;
 
 private :
-    Var *_var;
-    Exp *_let;
-    Exp *_in;
+    Exp *_body;
 
-    ExpaLet(const Token *token, Var *var, Exp *let, Exp *in) : Expa(token), _var(var), _let(let), _in(in) {}
+    ExpaLet(const Token *token, Exp *body, const VarExpList &varExpList) : Expa(token), _body(body),
+                                                                           varExpList(varExpList) {}
 
 public:
-    static ExpaLet *New(const Token *token, Var *var, Exp *let, Exp *in) {
-        return neww
-        ExpaLet(token, var, let, in);
+    VarExpList varExpList;
+
+    static ExpaLet *New(const Token *token, Exp *body, const VarExpList &varExpList) {
+        return new ExpaLet(token, body, varExpList);
     }
+
 };
 
 

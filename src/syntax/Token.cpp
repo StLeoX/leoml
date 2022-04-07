@@ -24,6 +24,15 @@ const std::unordered_map<int, const char *> Token::TagMap{
         {Token::Eq,    "=="},
         {Token::Ne,    "!="},
         {Token::Unit,  "()"},
+
+        // Other Expected Token Kind
+        {Token::And,   "and"},
+        {Token::In,    "in"},
+        {Token::Then,  "then"},
+        {Token::Else,  "else"},
+        {Token::Do,    "do"},
+        {Token::Done,  "done"},
+
 };
 
 const std::unordered_map<std::string, int> Token::KwMap{
@@ -31,13 +40,17 @@ const std::unordered_map<std::string, int> Token::KwMap{
         {"false", Token::False},
 
         {"let",   Token::Let},
+        {"and",   Token::And},
         {"in",    Token::In},
+
         {"if",    Token::If},
         {"then",  Token::Then},
         {"else",  Token::Else},
+
         {"while", Token::While},
         {"do",    Token::Do},
         {"done",  Token::Done},
+
         {"fst",   Token::Fst},
         {"snd",   Token::Snd},
 };
@@ -94,11 +107,10 @@ const Token *TokenSequence::Peek() const {
     return *_begin;
 }
 
-
 const Token *TokenSequence::Expect(int expect) {
     auto token = Peek();
     if (!Try(expect)) {
-        CompileError(token, "'%s' expected, but got '%s'",
+        CompileError(token, "Token `%s` expected, but got `%s`",
                      Token::TagLookup(expect), token->str.c_str());
     }
     return token;
