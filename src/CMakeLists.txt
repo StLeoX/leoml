@@ -5,4 +5,4 @@ set(CMAKE_CXX_STANDARD 17)
 
 add_subdirectory(syntax)
 
-add_executable(leoml main.cpp)
+add_executable(leoml main.cpp ${SYNTAX})

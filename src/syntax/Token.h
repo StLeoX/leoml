@@ -37,6 +37,11 @@ struct SourceLocation {
     const char *Begin() const {
         return lineBegin + column - 1;
     }
+
+    friend std::ostream &operator<<(std::ostream &os, const SourceLocation &location) {
+        os << *location.filename << ":" << location.line << ":" << location.column;
+        return os;
+    }
 };
 
 /// Token
@@ -220,6 +225,7 @@ public:
 
     /// Try
     // Try the Peek token. If matching its token kind, then Next.
+    // Try = Test + Next
     bool Try(int tag) {
         if (Peek()->tag == tag) {
             Next();
@@ -335,7 +341,7 @@ public:
 
     void SetParser(Parser *parser) { _parser = parser; }
 
-    void Output(std::ostream &out) const;
+    friend std::ostream &operator<<(std::ostream &os, TokenSequence &sequence);
 
 private:
     TokenList::iterator GetInsertFrontPos() {

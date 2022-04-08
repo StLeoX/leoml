@@ -92,7 +92,8 @@ static void VError(const SourceLocation &loc,
     for (unsigned i = 1; i + nspaces < loc.column; ++i)
         fputc(' ', stderr);
     fprintf(stderr, ANSI_COLOR_GREEN
-                    "^\n");
+                    "^\n"
+                    ANSI_COLOR_RESET);
     std::abort();
 }
 

@@ -9,22 +9,23 @@
 
 #include <list>
 #include <ostream>
-#include "Visitor.h"
 #include "Token.h"
+
+class Visitor;
 
 /// AST Node Interface
 /*
  * Interface:
  *     - Accept;
- *     - <<;
+ *     - operator<<;
  * */
 class ParseTreeNode {
 public:
     virtual ~ParseTreeNode() {};
 
-    virtual void Accept(Visitor *v) = 0;  // Terminate the visiting.
+//    virtual void Accept(Visitor *v) = 0;  // Terminate the visiting.
 
-    virtual friend std::ostream &operator<<(std::ostream &os, const ParseTreeNode &node) = 0;
+//    virtual std::ostream &operator<<(std::ostream &os, const ParseTreeNode &node) = 0;  // Serializate the node.
 
 };
 
@@ -74,6 +75,8 @@ public:
         return new Program();
     }
 
+    friend std::ostream &operator<<(std::ostream &os, const Program &program);
+
 };
 
 /// Decl
@@ -88,11 +91,12 @@ public:
     Exp *exp;
     VarList varList{};
 
-    virtual ~Decl() {};
+    virtual ~Decl() {
+    };
 
     static Decl *New() { return new Decl(); };
 
-    virtual void Accept(Visitor *visitor);
+    friend std::ostream &operator<<(std::ostream &os, const Decl &decl);
 
 };
 
@@ -106,9 +110,11 @@ class Var : public ParseTreeNode {
 private:
     const Token *_root;
 public:
-    ~Var() {};
+    ~Var() { delete _root; };
 
     static Var *New(const Token *root) { return new Var(); }
+
+    friend std::ostream &operator<<(std::ostream &os, const Var &var);
 
 };
 
@@ -127,6 +133,8 @@ class Exp : public ParseTreeNode {
 
     friend class Decl;
 
+    friend class Expa;
+
 protected:
     const Token *_root;
 
@@ -136,11 +144,12 @@ public:
     Var *var;
     ExpList expbList{};
 
-    virtual ~Exp() {};
+    virtual ~Exp() { delete _root, expbList; };
 
     static Exp *New(const Token *token) { return new Exp(token); }
 
-    const Token *GetToken() { return _root; }
+    friend std::ostream &operator<<(std::ostream &os, const Exp &exp);
+
 };
 
 /// Expb
@@ -167,6 +176,9 @@ public:
     virtual ~Expb() {}
 
     static Expb *New(const Token *token) { return new Expb(token); }
+
+    friend std::ostream &operator<<(std::ostream &os, const Expb &expb);
+
 };
 
 /// Expb Binary
@@ -188,7 +200,9 @@ private:
     }
 
 public:
-    ~ExpbBinary() {};
+    ~ExpbBinary() {
+        delete _lhs, _rhs;
+    };
 
     static ExpbBinary *New(const Token *token, Expb *lhs, Expb *rhs) {
         return new ExpbBinary(token, token->tag, lhs, rhs);
@@ -197,6 +211,8 @@ public:
     static ExpbBinary *New(const Token *token, int op, Expb *lhs, Expb *rhs) {
         return new ExpbBinary(token, op, lhs, rhs);
     };
+
+    friend std::ostream &operator<<(std::ostream &os, const ExpbBinary &expbBinary);
 
 };
 
@@ -217,13 +233,14 @@ private:
     ExpbUnary(const Token *root, int op, Expb *oprand) : Expb(root), _oprand(oprand) {}
 
 public:
-    ~ExpbUnary() {};
+    ~ExpbUnary() { delete _oprand; };
 
     static ExpbUnary *New(const Token *token, Expb *oprand) { return new ExpbUnary(token, token->tag, oprand); }
 
     static ExpbUnary *New(const Token *token, int op, Expb *oprand) { return new ExpbUnary(token, op, oprand); };
 
-    virtual void Accept(Visitor *visitor);
+    friend std::ostream &operator<<(std::ostream &os, const ExpbUnary &expbUnary);
+
 };
 
 /// Expb Cons
@@ -241,7 +258,12 @@ private:
     ExpbCons(const Token *token, Expb *first, Expb *second) : Expb(token), _first(first), _second(second) {}
 
 public:
+    ~ExpbCons() { delete _first, _second; }
+
     static ExpbCons *New(const Token *token, Expb *first, Expb *second) { return new ExpbCons(token, first, second); }
+
+    friend std::ostream &operator<<(std::ostream &os, const ExpbCons &expbCons);
+
 };
 
 /// Expb Compound
@@ -261,9 +283,13 @@ private:
     }
 
 public:
+    ~ExpbCompound() { delete _first, _second; }
+
     static ExpbCompound *New(const Token *token, Expb *lhs, Expb *rhs) {
         return new ExpbCompound(token, token->tag, lhs, rhs);
     }
+
+    friend std::ostream &operator<<(std::ostream &os, const ExpbCompound &expbCompound);
 
 };
 
@@ -274,6 +300,7 @@ public:
  *        | expaIf
  *        | expaWhile
  *        | expaLet
+ *        | ( exp )
  * */
 class Expa : public Exp {
     template<typename T> friend
@@ -283,11 +310,14 @@ protected:
     Expa(const Token *token) : Exp(token) {}
 
 public:
-    virtual void Accept(Visitor *visitor);
+    ~Expa() {};
 
     static Expa *New(Var *var) { return new Expa(var->_root); }
 
     static Expa *New(Exp *exp) { return new Expa(exp->_root); }
+
+    friend std::ostream &operator<<(std::ostream &os, const Expa &expa);
+
 };
 
 /// Expa Constant
@@ -303,8 +333,8 @@ private:
         int _ival;
         float _fval;
         bool _bval;
-        const std::string &_sval = "";
     };
+    std::string _sval{};
 
     ExpaConstant(const Token *token) : Expa(token) {
         assert(Token::Unit == token->tag);
@@ -327,6 +357,8 @@ private:
     }
 
 public:
+    ~ExpaConstant() {}
+
     static ExpaConstant *New(const Token *token, int val) { return new ExpaConstant(token, val); }
 
     static ExpaConstant *New(const Token *token, float val) { return new ExpaConstant(token, val); }
@@ -336,6 +368,8 @@ public:
     static ExpaConstant *New(const Token *token) { return new ExpaConstant(token); }
 
     static ExpaConstant *New(const Token *token, const std::string &val) { return new ExpaConstant(token, val); }
+
+    friend std::ostream &operator<<(std::ostream &os, const ExpaConstant &expaConstant);
 
 };
 
@@ -355,9 +389,15 @@ private:
     ExpaIf(const Token *token, Exp *cond, Exp *then, Exp *els) : Expa(token), _cond(cond), _then(then), _els(els) {}
 
 public:
+    ~ExpaIf() { delete _cond, _then, _els; }
+
     static ExpaIf *New(const Token *token, Exp *cond, Exp *then, Exp *els = nullptr) {
         return new ExpaIf(token, cond, then, els);
     };
+
+    friend std::ostream &operator<<(std::ostream &os, const ExpaIf &expaIf);
+
+
 };
 
 /// Expa while
@@ -375,7 +415,12 @@ private:
     ExpaWhile(const Token *token, Exp *cond, Exp *body) : Expa(token), _cond(cond), _body(body) {}
 
 public:
+    ~ExpaWhile() { delete _cond, _body; }
+
     static ExpaWhile *New(const Token *token, Exp *cond, Exp *body) { return new ExpaWhile(token, cond, body); }
+
+    friend std::ostream &operator<<(std::ostream &os, const ExpaWhile &expaWhile);
+
 };
 
 /// Expa let
@@ -395,9 +440,13 @@ private :
 public:
     VarExpList varExpList;
 
+    ~ExpaLet() { delete _body, varExpList; }
+
     static ExpaLet *New(const Token *token, Exp *body, const VarExpList &varExpList) {
         return new ExpaLet(token, body, varExpList);
     }
+
+    friend std::ostream &operator<<(std::ostream &os, const ExpaLet &expaLet);
 
 };
 

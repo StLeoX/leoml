@@ -28,7 +28,7 @@ public:
         _program=ParseProgram();
     }
 
-    void Output(std::ostream &out) const;
+    friend std::ostream &operator<<(std::ostream &os, const Parser &parser);
 
     Program* ParseProgram();
 
@@ -71,6 +71,9 @@ private:
 
     /// Parse ExpaLet
     ExpaLet *ParseExpaLet(const Token* token);
+
+    /// Parse PExp
+    Expa *ParsePExp(const Token* token);
 };
 
 

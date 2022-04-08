@@ -2,13 +2,18 @@
 #include <iostream>
 #include <list>
 #include <filesystem>
-#include "syntax/Lexer.h"
-#include "syntax/Lexer.cpp"
+
 #include "syntax/Token.h"
 #include "syntax/Token.cpp"
+#include "syntax/Lexer.h"
+#include "syntax/Lexer.cpp"
+#include "syntax/Parser.h"
+#include "syntax/Parser.cpp"
+#include "syntax/ParseTree.h"
+#include "syntax/ParseTree.cpp"
 
 std::string source_path = "";
-std::string output_dir = "";
+std::string output_dir = "";  // "." for example
 std::list<std::string> source_list{};
 
 void Usage() {
@@ -21,7 +26,7 @@ void Usage() {
     exit(0);
 }
 
-/// GetName
+/// Get File Name without Suffix
 /// \param filepath
 /// \return filename, no suffix!
 std::string GetName(const std::string &path) {
@@ -34,11 +39,11 @@ std::string GetName(const std::string &path) {
     std::string name_no_suffix;
     if (right == std::string::npos)
         name_no_suffix = name;
-    name_no_suffix = name.substr(0, right + 1);
+    name_no_suffix = name.substr(0, right);
     return name_no_suffix;
 }
 
-///
+/// Laod File Content
 /// \param filepath
 /// \return content
 std::string *LoadFile(const std::string &filepath) {
@@ -52,6 +57,7 @@ std::string *LoadFile(const std::string &filepath) {
     return text;
 }
 
+// Tokenize entry
 void Tokenize() {
     printf("tokenizing\n");
     for (auto source:source_list) {
@@ -60,15 +66,29 @@ void Tokenize() {
         Lexer *lexer = Lexer::New(LoadFile(source), &name);
         lexer->Tokenize(ts);
         if (output_dir != "") {
-            auto outpath = std::filesystem::absolute(output_dir + "/" + name + "tts.txt");
+            auto outpath = std::filesystem::absolute(output_dir + "/" + name + "ts.txt");
             std::ofstream out{outpath};
-            ts.Output(out);
-        } else { ts.Output(std::cout); }
+            out << ts;
+        } else { std::cout << ts; }
     }
 }
 
+// Parse entry
 void Parse() {
-    CompilePanic("");
+    printf("parsing\n");
+    for (auto source:source_list) {
+        auto name = GetName(source);
+        TokenSequence ts = TokenSequence();
+        Lexer *lexer = Lexer::New(LoadFile(source), &name);
+        lexer->Tokenize(ts);
+        Parser *parser = Parser::New(ts);
+        parser->Parse();
+        if (output_dir != "") {
+            auto outpath = std::filesystem::absolute(output_dir + "/" + name + "ast.txt");
+            std::ofstream out{outpath};
+            out << *parser;
+        } else { std::cout << *parser; }
+    }
 }
 
 int main(int argc, char *argv[]) {

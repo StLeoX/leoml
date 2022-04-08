@@ -58,7 +58,7 @@ const std::unordered_map<std::string, int> Token::KwMap{
 std::ostream &operator<<(std::ostream &os, const Token &token) {
     os << "tag: " << token.tag <<
        "\tstr: " << token.str <<
-       "\tloc: " << "(" << token.loc.line << ", " << token.loc.column << ")";
+       "\tloc: " << token.loc;
     return os;
 }
 
@@ -116,13 +116,11 @@ const Token *TokenSequence::Expect(int expect) {
     return token;
 }
 
-
-void TokenSequence::Output(std::ostream &out) const {
-    auto ts = *this;
-    while (!ts.Empty()) {
-        auto token = ts.Next();
-        out << *token << std::endl;
-    }
+std::ostream &operator<<(std::ostream &os, TokenSequence &sequence) {
+    while (!sequence.Empty()) {
+        os << *(sequence.Next()) << std::endl;
+    };
+    return os;
 }
 
 

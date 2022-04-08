@@ -5,8 +5,6 @@
 #include "Parser.h"
 
 
-void Parser::Output(std::ostream &out) const {}
-
 /// Parse Float
 // ParseConstant aux
 ExpaConstant *ParseFloat(const Token *token) {
@@ -69,7 +67,6 @@ ExpaWhile *Parser::ParseExpaWhile(const Token *token) {
     _ts.Expect(Token::Do);  // "do" required
     auto body = ParseExp();
     _ts.Expect(Token::Done);  // "done" required
-    _ts.Next();
     return ExpaWhile::New(token, cond, body);
 }
 
@@ -85,6 +82,12 @@ ExpaLet *Parser::ParseExpaLet(const Token *token) {
     _ts.Expect(Token::In);  // "in" required
     auto body = ParseExp();
     return ExpaLet::New(token, body, varExpList);
+}
+
+Expa *Parser::ParsePExp(const Token *token) {
+    auto exp = Parser::ParseExp();
+    _ts.Expect(Token::RP);
+    return Expa::New(exp);
 }
 
 Expa *Parser::ParseExpa() {
@@ -106,10 +109,7 @@ Expa *Parser::ParseExpa() {
         case Token::Let:
             return ParseExpaLet(peek);
         case Token::LP:
-            auto exp = ParseExp();
-            _ts.Expect(Token::RP);
-            _ts.Next();
-            return Expa::New(exp);
+            return ParsePExp(peek);
         default:
             CompileError(peek, "unexpected expa");
             return nullptr;
@@ -138,7 +138,6 @@ ExpbCons *Parser::ParseExpbCons(const Token *token) {
     _ts.Expect(',');
     auto second = ParseExpb();
     _ts.Expect(')');
-    _ts.Next();
     return ExpbCons::New(token, first, second);
 }
 
@@ -191,23 +190,21 @@ Decl *Parser::ParseDecl() {
     // let...
     if (peek->tag == Token::Var) {
         ret->varList.push_back(Var::New(peek));
-        _ts.Expect('(');
-        ret->varList.push_back((Var::New(_ts.Next())));
-        do {
+        if (_ts.Test('(')) {
             ret->varList.push_back((Var::New(_ts.Next())));
-        } while (_ts.Try(Token::Comma));
-        _ts.Expect(')');
-        _ts.Next();
+            do {
+                ret->varList.push_back((Var::New(_ts.Next())));
+            } while (_ts.Try(Token::Comma));
+            _ts.Expect(')');
+        }
         _ts.Expect('=');
-        _ts.Next();
+        ret->exp = ParseExp();
         _ts.Expect(Token::Dsemi);
-        _ts.Next();
     }
-        // exp
+        // exp kind
     else {
         ret->exp = ParseExp();
         _ts.Expect(Token::Dsemi);
-        _ts.Next();
     }
     return ret;
 }
@@ -221,7 +218,7 @@ Program *Parser::ParseProgram() {
     return ret;
 }
 
-
-
-
-
+std::ostream &operator<<(std::ostream &os, const Parser &parser) {
+    os << *parser._program;
+    return os;
+}
