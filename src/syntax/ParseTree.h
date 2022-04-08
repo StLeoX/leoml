@@ -8,18 +8,24 @@
 #define LEOML_PARSETREE_H
 
 #include <list>
+#include <ostream>
 #include "Visitor.h"
 #include "Token.h"
 
-/// AST Node
-class ASTNode {
+/// AST Node Interface
+/*
+ * Interface:
+ *     - Accept;
+ *     - <<;
+ * */
+class ParseTreeNode {
 public:
-    virtual ~ASTNode() {}
+    virtual ~ParseTreeNode() {};
 
     virtual void Accept(Visitor *v) = 0;  // Terminate the visiting.
 
-protected:
-    ASTNode() {}
+    virtual friend std::ostream &operator<<(std::ostream &os, const ParseTreeNode &node) = 0;
+
 };
 
 /// Language Hierarchy Model
@@ -55,22 +61,23 @@ class ExpaLet;
 
 
 /// Program
-class Program : public ASTNode {
+class Program : public ParseTreeNode {
 private:
-    Program() : decllist{} {};
+    Program() {};
 
 public:
+    DeclList declList{};
+
+    virtual ~Program() {};
+
     static Program *New() {
         return new Program();
     }
 
-    virtual ~Program() {};
-    DeclList decllist;
-
 };
 
 /// Decl
-class Decl : public ASTNode {
+class Decl : public ParseTreeNode {
     template<typename T> friend
     class TreeVisitor;
 
@@ -78,30 +85,43 @@ protected:
     Decl() {};
 
 public:
+    Exp *exp;
     VarList varList{};
 
-    static Decl *New() { return new Decl(); };
-
     virtual ~Decl() {};
+
+    static Decl *New() { return new Decl(); };
 
     virtual void Accept(Visitor *visitor);
 
 };
 
-
 /// Var
-class Var : public ASTNode {
+class Var : public ParseTreeNode {
     template<typename T> friend
     class TreeVisitor;
 
+    friend class Expa;
+
+private:
+    const Token *_root;
 public:
+    ~Var() {};
+
     static Var *New(const Token *root) { return new Var(); }
 
-    ~Var() {};
 };
 
 /// Exp
-class Exp : public ASTNode {
+/*
+ * exp ::= var expblist
+ *       | expb
+ *
+ * expblist ::= expb
+ *            | expblist expb
+ *
+ * */
+class Exp : public ParseTreeNode {
     template<typename T> friend
     class TreeVisitor;
 
@@ -113,12 +133,29 @@ protected:
     Exp(const Token *token) : _root(token) {};
 
 public:
+    Var *var;
+    ExpList expbList{};
+
     virtual ~Exp() {};
+
+    static Exp *New(const Token *token) { return new Exp(token); }
 
     const Token *GetToken() { return _root; }
 };
 
 /// Expb
+/* expb ::= expa
+ *        | expbBinary
+ *        | expbUnary
+ *        | expbCons
+ *        | expbCompound
+ * FIRST
+ *     First(expa) = \Union First(\expa_i)
+ *     First(expbBinary) = { !LeftRecur! }
+ *     First(expbUnary) = { Token::UnaryOpSet }
+ *     First(expbCons) = { (, }
+ *     First(expbCompound) = { !LeftRecur! }
+ * */
 class Expb : public Exp {
     template<typename T> friend
     class TreeVisitor;
@@ -129,13 +166,14 @@ protected:
 public:
     virtual ~Expb() {}
 
+    static Expb *New(const Token *token) { return new Expb(token); }
 };
 
 /// Expb Binary
 /*
- * Binary Operations:
- *     +, -, *, /, <, <=, ==, !=, >, >=, ;
- *     cons,
+ * expb ::= expb BinaryOp expb
+ *
+ * BinaryOp: +, -, *, /, <, >, <=, >=, ==, !=
  * */
 class ExpbBinary : public Expb {
     template<typename T> friend
@@ -150,6 +188,8 @@ private:
     }
 
 public:
+    ~ExpbBinary() {};
+
     static ExpbBinary *New(const Token *token, Expb *lhs, Expb *rhs) {
         return new ExpbBinary(token, token->tag, lhs, rhs);
     }
@@ -158,13 +198,13 @@ public:
         return new ExpbBinary(token, op, lhs, rhs);
     };
 
-    virtual ~ExpbBinary() {};
 };
 
 /// Expb Unary
 /*
- * Unary Operations:
- *     car, cdr, empty
+ * expb ::= UnaryOp ( expb )
+ * UnaryOp:
+ *     fst, snd
  * */
 class ExpbUnary : public Expb {
     template<typename T> friend
@@ -177,28 +217,46 @@ private:
     ExpbUnary(const Token *root, int op, Expb *oprand) : Expb(root), _oprand(oprand) {}
 
 public:
+    ~ExpbUnary() {};
+
     static ExpbUnary *New(const Token *token, Expb *oprand) { return new ExpbUnary(token, token->tag, oprand); }
 
     static ExpbUnary *New(const Token *token, int op, Expb *oprand) { return new ExpbUnary(token, op, oprand); };
 
-    virtual ~ExpbUnary() {};
-
     virtual void Accept(Visitor *visitor);
+};
+
+/// Expb Cons
+/*
+ * exp ::= ( first, second )
+ * */
+class ExpbCons : public Expb {
+    template<typename T> friend
+    class TreeVisitor;
+
+private:
+    Expb *_first;
+    Expb *_second;
+
+    ExpbCons(const Token *token, Expb *first, Expb *second) : Expb(token), _first(first), _second(second) {}
+
+public:
+    static ExpbCons *New(const Token *token, Expb *first, Expb *second) { return new ExpbCons(token, first, second); }
 };
 
 /// Expb Compound
 /*
- * Compound Expb ::= Expb; Expb
+ * expb ::= expb; expb
  * */
 class ExpbCompound : public Expb {
     template<typename T> friend
     class TreeVisitor;
 
 private:
-    Expb *_lhs;
-    Expb *_rhs;
+    Expb *_first;
+    Expb *_second;
 
-    ExpbCompound(const Token *root, int op, Expb *lhs, Expb *rhs) : Expb(root), _lhs(lhs), _rhs(rhs) {
+    ExpbCompound(const Token *root, int op, Expb *lhs, Expb *rhs) : Expb(root), _first(lhs), _second(rhs) {
         assert(';' == op);
     }
 
@@ -210,6 +268,13 @@ public:
 };
 
 /// Expa
+/*
+ * expa ::= var
+ *        | expaConstant
+ *        | expaIf
+ *        | expaWhile
+ *        | expaLet
+ * */
 class Expa : public Exp {
     template<typename T> friend
     class TreeVisitor;
@@ -220,6 +285,9 @@ protected:
 public:
     virtual void Accept(Visitor *visitor);
 
+    static Expa *New(Var *var) { return new Expa(var->_root); }
+
+    static Expa *New(Exp *exp) { return new Expa(exp->_root); }
 };
 
 /// Expa Constant
@@ -237,6 +305,10 @@ private:
         bool _bval;
         const std::string &_sval = "";
     };
+
+    ExpaConstant(const Token *token) : Expa(token) {
+        assert(Token::Unit == token->tag);
+    }
 
     ExpaConstant(const Token *token, int val) : Expa(token), _ival(val) {
         assert(Token::Int == token->tag);
@@ -261,13 +333,16 @@ public:
 
     static ExpaConstant *New(const Token *token, bool val) { return new ExpaConstant(token, val); }
 
+    static ExpaConstant *New(const Token *token) { return new ExpaConstant(token); }
+
     static ExpaConstant *New(const Token *token, const std::string &val) { return new ExpaConstant(token, val); }
 
-public:
 };
 
-
 /// Expa if
+/*
+ * expaIf ::= if exp then exp [else exp]
+ * */
 class ExpaIf : public Expa {
     template<typename T> friend
     class TreeVisitor;
@@ -286,6 +361,9 @@ public:
 };
 
 /// Expa while
+/*
+ * expaWhile ::= while exp do exp done
+* */
 class ExpaWhile : public Expa {
     template<typename T> friend
     class TreeVisitor;
@@ -301,6 +379,9 @@ public:
 };
 
 /// Expa let
+/*
+ * expaLet ::= let var = exp [and var = exp]* in exp
+ * */
 class ExpaLet : public Expa {
     template<typename T> friend
     class TreeVisitor;

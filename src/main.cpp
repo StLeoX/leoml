@@ -21,14 +21,21 @@ void Usage() {
     exit(0);
 }
 
-///
+/// GetName
 /// \param filepath
-/// \return filename
+/// \return filename, no suffix!
 std::string GetName(const std::string &path) {
-    auto pos = path.rfind('/');
-    if (pos == std::string::npos)
-        return path;
-    return path.substr(pos + 1);
+    auto left = path.rfind('/');
+    std::string name;
+    if (left == std::string::npos)
+        name = path;
+    name = path.substr(left + 1);
+    auto right = name.find('.');
+    std::string name_no_suffix;
+    if (right == std::string::npos)
+        name_no_suffix = name;
+    name_no_suffix = name.substr(0, right + 1);
+    return name_no_suffix;
 }
 
 ///

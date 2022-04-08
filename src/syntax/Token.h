@@ -50,7 +50,7 @@ private:
 public:
     // token enum
     enum {
-        // single char token
+        // single char punctuate
         LP = '(',
         RP = ')',
         Add = '+',
@@ -61,10 +61,10 @@ public:
         Semi = ';',
         Lt = '<',
         Gt = '>',
-        LetAssign = '=',
+        Assign = '=',
         NEW_LINE = '\n',
 
-        // multi char token
+        // multi char punctuate
         Dsemi = 130,// ";;"
         Le,// "<="
         Ge,// ">="
@@ -86,13 +86,14 @@ public:
         Done,// "done"
         Fst,// "fst"
         Snd,// "snd"
+        Cons,// "(, )"
 
         // Keywords_todo
         // Rec,
         // Fun,
 
         // data type enum
-        Var,
+        Var = 180,
         Int,
         Bool,
         Float,
@@ -144,7 +145,19 @@ public:
         return ret;
     }
 
-    bool IsEOF() const { return tag == Token::END; }
+    bool IsEOF() const { return tag == END; }
+
+    bool IsConstant() const {
+        return tag == Int || tag == Float || tag == String || tag == Bool || tag == Unit;
+    }
+
+    bool IsUnary() const { return tag == Fst || tag == Snd; }
+
+    bool IsBinary() const {
+        return tag == '+' || tag == '-' || tag == '*' || tag == '/' || tag == '<' || tag == '>' || tag == Le ||
+               tag == Eq ||
+               tag == Ne || tag == Ge || tag == Cons;
+    }
 
     friend std::ostream &operator<<(std::ostream &os, const Token &token);
 
@@ -219,6 +232,8 @@ public:
     // Test the Peek token, Check its token kind.
     bool Test(int tag) { return Peek()->tag == tag; }
 
+    /// Next
+    // Get the Next token.
     const Token *Next() {
         auto ret = Peek();
         if (!ret->IsEOF()) {
@@ -245,6 +260,7 @@ public:
 
     /// PeekPrior
     // Get the prior Peek token. First Putback then Next.
+    // Design: Illegal and Impossible for the Logic Stack!
     const Token *PeekPrior() {
         PutBack();
         auto ret = Peek();

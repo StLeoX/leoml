@@ -25,69 +25,52 @@ public:
 
     // main API
     void Parse() {
-        ParseProgram(_program);
+        _program=ParseProgram();
     }
-
-    void ParseProgram(Program *program);
 
     void Output(std::ostream &out) const;
 
-private:
-    void ParseDecl(Decl *decl);
+    Program* ParseProgram();
 
+private:
+    /// Parse Decl
+    Decl* ParseDecl();
+
+    /// Parse Exp
     Exp *ParseExp();
 
-    /// Expb
-    Expb *ParseExpb(Expb *expb);
+    /// Parse Expb
+    Expb *ParseExpb();
 
-    ExpbBinary *ParseExpbBinary(ExpbBinary *expbBinary);
+    /// Parse ExpbBinary
+    ExpbBinary *ParseExpbBinary(const Token* token);
 
-    ExpbUnary *ParseExpbUnary(ExpbUnary *expbUnary);
+    /// Parse ExpbUnary
+    ExpbUnary *ParseExpbUnary(const Token* token);
 
-    ExpaConstant *ParseExpbCompound(ExpbCompound *expbCompound);
+    /// Parse ExpbCons
+    ExpbCons *ParseExpbCons(const Token* token);
 
-    /// Expa
-    /*
-     * expa ::= var
-     *        | intl
-     *        | floatl
-     *        | booll
-     *        | stringl
-     *        | Unit
-     *        | if exp then exp else exp
-     *        | let var = exp
-     *        | while exp do exp end
-     * */
-    Expa *ParseExpa(Expa *expa);
+    /// Parse ExpbCompound
+    ExpbCompound *ParseExpbCompound(const Token* token);
 
+    /// Parse Expa
+    Expa *ParseExpa();
+
+    /// Parse Ident
     Var *ParseVar(const Token *token);
 
     /// Parse Constant
-    /*
-     * Constant ::= intl | floatl | booll | stringl | NaN
-     * */
     ExpaConstant *ParseConstant(const Token *token);
 
-    ExpaConstant *ParseInt(const Token *token);
+    /// Parse ExpaIf
+    ExpaIf *ParseExpaIf(const Token* token);
 
-    ExpaConstant *ParseFloat(const Token *token);
+    /// Parse ExpaWhile
+    ExpaWhile *ParseExpaWhile(const Token* token);
 
-    ExpaConstant *ParseString(const Token *token);
-
-    /*
-     * ExpaIf ::= if exp then exp [else exp]
-     * */
-    ExpaIf *ParseExpaIf();
-
-    /*
-     * ExpaWhile ::= while exp do exp done
-     * */
-    ExpaWhile *ParseExpaWhile();
-
-    /*
-     * ExpaLet ::= let var = exp [and var = exp]* in exp
-     * */
-    ExpaLet *ParseExpaLet();
+    /// Parse ExpaLet
+    ExpaLet *ParseExpaLet(const Token* token);
 };
 
 

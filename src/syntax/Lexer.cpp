@@ -59,7 +59,7 @@ Token *Lexer::Scan() {
             else return MakeToken(Token::Gt);
         case '=':
             if (Try('=')) return MakeToken(Token::Eq);
-            else return MakeToken(Token::LetAssign);
+            else return MakeToken(Token::Assign);
         case '!':
             if (Try('=')) return MakeToken(Token::Ne);
             else {
@@ -169,7 +169,7 @@ void Lexer::SkipComment() {
         }
         CompileError(_loc, "unterminated block comment");
     }
-    CompilePanic("comment");
+    CompilePanic("unreachable");
 }
 
 void Lexer::Tokenize(TokenSequence &ts) {

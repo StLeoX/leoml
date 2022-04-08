@@ -69,14 +69,14 @@ varlist ::= var
           | varlist , var
 
 # exp
-exp ::= var explist
+exp ::= var expblist
       | expb
 
-explist ::= expb
-          | explist expb
+expblist ::= expb
+          | expblist expb
 
 # exp base
-expb ::= expa
+expb ::= expa # Expa
        | expb + expb
        | expb - expb
        | expb * expb
@@ -86,17 +86,17 @@ expb ::= expa
        | expb == expb
        | epxb != epxb
        | expb > expb
-       | expb >= expb
-       | ( expb, expb ) #cons
+       | expb >= expb # End of ExpbBinary
+       | ( expb, expb ) #cons # ExpbCons
+       | expb; expb # compound # ExpbCompound
        | fst ( expb ) # fst
-       | snd ( expb ) # snd
-       | expb; expb # compound
+       | snd ( expb ) # snd # ExpbUnary
 
 # exp atom
 expa ::= var
        | constant
-       | if exp then exp else exp
-       | let var = exp in exp
+       | if exp then exp [else exp]
+       | let var = exp [and var = exp]* in exp
        | while exp do exp done
        | (exp)
 
@@ -114,6 +114,7 @@ stringl ::= ".*"
 
 var ::= [a-zA-Z][a-zA-Z_0-9]*
 comment ::= (* ... *)
+
 ```
 
 
@@ -177,3 +178,6 @@ Type System:
 2. 为什么相应的类都需要New函数？因为调用构造函数生成在stack上，而调用New通过new生成在heap上，避免爆栈。
 3. 注意区分decl里面的let 和 expa里面的let...in...，两者仅仅是复用关键字let。
 4. 从Lexer的角度来看，所谓的Keywords不就是一种特殊的Ident么。
+5. 可以看到文法中的decllist、varlist、expblist都是左递归的形式，但我们是有办法处理的，可以使用外部变量而不仅仅是一个栈。
+
+6. ASTNode当中可能的_root字段被用来记录continuation的start位置（主要是利用到token->loc），而可能的\_op字段才是用来记录ASTNode的唯一类型，所以两者并不对应。
