@@ -25,16 +25,16 @@ public:
 
     // main API
     void Parse() {
-        _program=ParseProgram();
+        _program = ParseProgram();
     }
 
     friend std::ostream &operator<<(std::ostream &os, const Parser &parser);
 
-    Program* ParseProgram();
+    Program *ParseProgram();
 
 private:
     /// Parse Decl
-    Decl* ParseDecl();
+    Decl *ParseDecl();
 
     /// Parse Exp
     Exp *ParseExp();
@@ -43,16 +43,16 @@ private:
     Expb *ParseExpb();
 
     /// Parse ExpbBinary
-    ExpbBinary *ParseExpbBinary(const Token* token);
+    ExpbBinary *ParseExpbBinary(const Token *token);
 
     /// Parse ExpbUnary
-    ExpbUnary *ParseExpbUnary(const Token* token);
+    ExpbUnary *ParseExpbUnary(const Token *token);
 
     /// Parse ExpbCons
-    ExpbCons *ParseExpbCons(const Token* token);
+    ExpbCons *ParseExpbCons(const Token *token);
 
     /// Parse ExpbCompound
-    ExpbCompound *ParseExpbCompound(const Token* token);
+    ExpbCompound *ParseExpbCompound(const Token *token);
 
     /// Parse Expa
     Expa *ParseExpa();
@@ -64,16 +64,16 @@ private:
     ExpaConstant *ParseConstant(const Token *token);
 
     /// Parse ExpaIf
-    ExpaIf *ParseExpaIf(const Token* token);
+    ExpaIf *ParseExpaIf(const Token *token);
 
     /// Parse ExpaWhile
-    ExpaWhile *ParseExpaWhile(const Token* token);
+    ExpaWhile *ParseExpaWhile(const Token *token);
 
     /// Parse ExpaLet
-    ExpaLet *ParseExpaLet(const Token* token);
+    ExpaLet *ParseExpaLet(const Token *token);
 
     /// Parse PExp
-    Expa *ParsePExp(const Token* token);
+    Expa *ParsePExp(const Token *token);
 };
 
 

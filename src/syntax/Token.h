@@ -56,18 +56,18 @@ public:
     // token enum
     enum {
         // single char punctuate
-        LP = '(',
-        RP = ')',
-        Add = '+',
-        Sub = '-',
-        Mul = '*',
-        Div = '/',
-        Comma = ',',
-        Semi = ';',
-        Lt = '<',
-        Gt = '>',
-        Assign = '=',
-        NEW_LINE = '\n',
+        NEW_LINE = '\n',// 10
+        LP = '(',// 40
+        RP = ')',// 41
+        Mul = '*',// 42
+        Add = '+',// 43
+        Comma = ',',// 44
+        Sub = '-',// 45
+        Div = '/',// 47
+        Semi = ';',// 59
+        Lt = '<',// 60
+        Assign = '=',// 61
+        Gt = '>',// 62
 
         // multi char punctuate
         Dsemi = 130,// ";;"
@@ -239,7 +239,7 @@ public:
     bool Test(int tag) { return Peek()->tag == tag; }
 
     /// Next
-    // Get the Next token.
+    // Get the Peek token. Then go next.
     const Token *Next() {
         auto ret = Peek();
         if (!ret->IsEOF()) {

@@ -68,7 +68,7 @@ void Tokenize() {
         if (output_dir != "") {
             auto outpath = std::filesystem::absolute(output_dir + "/" + name + "ts.txt");
             std::ofstream out{outpath};
-            out << ts;
+            out << ts;// todo
         } else { std::cout << ts; }
     }
 }

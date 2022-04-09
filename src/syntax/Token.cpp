@@ -79,11 +79,8 @@ TokenSequence TokenSequence::GetLine() {
 bool TokenSequence::IsBeginOfLine() const {
     if (_begin == tokenList->begin())
         return true;
-
     auto pre = _begin;
     --pre;
-
-
     return ((*pre)->tag == Token::NEW_LINE ||
             (*pre)->loc.filename != (*_begin)->loc.filename);
 }

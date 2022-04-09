@@ -8,6 +8,7 @@
 #define LEOML_PARSETREE_H
 
 #include <list>
+#include <iostream>
 #include <ostream>
 #include "Token.h"
 
@@ -21,11 +22,13 @@ class Visitor;
  * */
 class ParseTreeNode {
 public:
+    ParseTreeNode() {};
+
     virtual ~ParseTreeNode() {};
 
 //    virtual void Accept(Visitor *v) = 0;  // Terminate the visiting.
 
-//    virtual std::ostream &operator<<(std::ostream &os, const ParseTreeNode &node) = 0;  // Serializate the node.
+    virtual std::ostream &operator<<(std::ostream &os, const ParseTreeNode &node) = 0;  // Serializate the node.
 
 };
 
@@ -40,11 +43,11 @@ using VarList = std::list<Var *>; // Varlist
 
 class Exp; // Exp
 
-using ExpList = std::list<Exp *>; // Explist
-
 using VarExpList = std::list<std::pair<Var *, Exp *>>;
 
 class Expb; //Expb
+
+using ExpbList = std::list<Expb *>; // Explist
 
 class ExpbBinary;
 
@@ -64,12 +67,12 @@ class ExpaLet;
 /// Program
 class Program : public ParseTreeNode {
 private:
-    Program() {};
+    Program() : declList(new DeclList) {};
 
 public:
-    DeclList declList{};
+    DeclList *declList;
 
-    virtual ~Program() {};
+    virtual ~Program() { delete declList; };
 
     static Program *New() {
         return new Program();
@@ -85,13 +88,14 @@ class Decl : public ParseTreeNode {
     class TreeVisitor;
 
 protected:
-    Decl() {};
+    Decl() : varList(new VarList) {};
 
 public:
     Exp *exp;
-    VarList varList{};
+    VarList *varList;
 
     virtual ~Decl() {
+        delete exp, varList;
     };
 
     static Decl *New() { return new Decl(); };
@@ -138,13 +142,13 @@ class Exp : public ParseTreeNode {
 protected:
     const Token *_root;
 
-    Exp(const Token *token) : _root(token) {};
+    Exp(const Token *token) : _root(token), expbList(new ExpbList) {};
 
 public:
     Var *var;
-    ExpList expbList{};
+    ExpbList *expbList;
 
-    virtual ~Exp() { delete _root, expbList; };
+    virtual ~Exp() { delete _root, var, expbList; };
 
     static Exp *New(const Token *token) { return new Exp(token); }
 
@@ -177,7 +181,8 @@ public:
 
     static Expb *New(const Token *token) { return new Expb(token); }
 
-    friend std::ostream &operator<<(std::ostream &os, const Expb &expb);
+    // Expb should not be directly serilizated.
+//    friend std::ostream &operator<<(std::ostream &os, const Expb &expb);
 
 };
 
@@ -302,12 +307,12 @@ public:
  *        | expaLet
  *        | ( exp )
  * */
-class Expa : public Exp {
+class Expa : public Expb {
     template<typename T> friend
     class TreeVisitor;
 
 protected:
-    Expa(const Token *token) : Exp(token) {}
+    Expa(const Token *token) : Expb(token) {}
 
 public:
     ~Expa() {};
@@ -315,6 +320,8 @@ public:
     static Expa *New(Var *var) { return new Expa(var->_root); }
 
     static Expa *New(Exp *exp) { return new Expa(exp->_root); }
+
+    static Expa *New(const Token *token) { return new Expa(token); }
 
     friend std::ostream &operator<<(std::ostream &os, const Expa &expa);
 
@@ -434,16 +441,15 @@ class ExpaLet : public Expa {
 private :
     Exp *_body;
 
-    ExpaLet(const Token *token, Exp *body, const VarExpList &varExpList) : Expa(token), _body(body),
-                                                                           varExpList(varExpList) {}
+    ExpaLet(const Token *token, Exp *body) : Expa(token), _body(body), varExpList(new VarExpList) {}
 
 public:
-    VarExpList varExpList;
+    VarExpList *varExpList;
 
     ~ExpaLet() { delete _body, varExpList; }
 
-    static ExpaLet *New(const Token *token, Exp *body, const VarExpList &varExpList) {
-        return new ExpaLet(token, body, varExpList);
+    static ExpaLet *New(const Token *token, Exp *body) {
+        return new ExpaLet(token, body);
     }
 
     friend std::ostream &operator<<(std::ostream &os, const ExpaLet &expaLet);

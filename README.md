@@ -180,4 +180,7 @@ Type System:
 4. 从Lexer的角度来看，所谓的Keywords不就是一种特殊的Ident么。
 5. 可以看到文法中的decllist、varlist、expblist都是左递归的形式，但我们是有办法处理的，可以使用外部变量而不仅仅是一个栈。
 6. ASTNode当中可能的_root字段被用来记录continuation的start位置（主要是利用到token->loc），而可能的\_op字段才是用来记录ASTNode的唯一类型，所以两者并不对应。
-7. 建立的TokenSequence实体来表示符号栈，实际上这**并不是理论上纯粹的栈**，这个栈可以看到PeekNext从而帮助判断，这个栈甚至是支持“倒带”看到PeekPrior（）。
+7. 建立的TokenSequence实体来表示符号栈，实际上这**并不是理论上纯粹的栈**，这个栈可以看到PeekNext从而帮助判断，这个栈甚至是支持“倒带”看到PeekPrior（）。所以Parser也不是纯粹的LR(1) Parser，而是部分具备LR(2)的特征。
+8. 实际上，在做operator<<的部分，也是同样地在写`Producer Pattern`。
+9. 你会发现，在Parser里面使用最多的函数就是Next()，也就是所谓`eat`逻辑。
+

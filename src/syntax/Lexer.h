@@ -61,7 +61,7 @@ private:
     Token *ScanIdent();
 
     // scan string
-    Token *ScanString(std::string& word);
+    Token *ScanString(std::string &word);
 
     // var
     // var ::= [a-zA-Z_][a-zA-Z_0-9]*

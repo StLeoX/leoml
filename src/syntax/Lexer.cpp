@@ -49,8 +49,8 @@ Token *Lexer::Scan() {
             }
             return MakeToken('(');
         case ';':
-            if (Try(';')) return MakeToken(Token::Semi);
-            else return MakeToken(Token::Dsemi);
+            if (Try(';')) return MakeToken(Token::Dsemi);
+            else return MakeToken(Token::Semi);
         case '<':
             if (Try('=')) return MakeToken(Token::Le);
             else return MakeToken(Token::Lt);
