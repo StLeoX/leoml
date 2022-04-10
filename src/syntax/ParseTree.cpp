@@ -1,6 +1,8 @@
 //
 // Created by leo on 2022/4/4.
 //
+// Impls for serialize the ParseTreeNode
+//
 
 
 #include "ParseTree.h"
@@ -13,134 +15,121 @@ int ntab = 0;
 #define ILT INC;LF;TAB
 #define LT LF;TAB
 
-std::ostream &operator<<(std::ostream &os, const Program &program) {
+void Program::Serialize(std::ostream &os) {
     os << "+ program";
     INC;
-    for (auto decl:*program.declList) {
+    for (auto decl:*declList) {
         LT;
-        os << *decl;
+        decl->Serialize(os);
     }
     DEC;
-    return os;
 }
 
-std::ostream &operator<<(std::ostream &os, const Decl &decl) {
+void Decl::Serialize(std::ostream &os) {
     os << "+ decl";
     ILT;
-    if (decl.exp != nullptr) {
-        os << *decl.exp;
+    if (exp != nullptr) {
+        exp->Serialize(os);
         LT;
     }
     os << "+ var list";
     INC;
-    for (auto var:*decl.varList) {
+    for (auto var:*varList) {
         LT;
-        os << *var;
+        var->Serialize(os);
     }
     DEC;
     DEC;
-    return os;
 }
 
-std::ostream &operator<<(std::ostream &os, const Var &var) {
-    os << "| var" << var._root->str;
-    return os;
+void Var::Serialize(std::ostream &os) {
+    os << "| var" << _root->str;
 }
 
-std::ostream &operator<<(std::ostream &os, const Exp &exp) {
+void Exp::Serialize(std::ostream &os) {
     os << "+ exp";
     ILT;
-    if (exp.var != nullptr) {
-        os << *exp.var;
+    if (var != nullptr) {
+        var->Serialize(os);
         LT;
     }
     os << "+ expb list";  // todo
     INC;
-    for (auto expb:*exp.expbList) {
+    for (auto expb:*expbList) {
         LT;
-        os << *expb;
+        expb->Serialize(os);
     }
     DEC;
     DEC;
-    return os;
 }
 
-std::ostream &operator<<(std::ostream &os, const ExpbBinary &expbBinary) {
+void ExpbBinary::Serialize(std::ostream &os) {
     os << "+ expbBinary";
     ILT;
-    os << "| op\t" << Token::TagLookup(expbBinary._op);
+    os << "| op\t" << Token::TagLookup(_op);
     LT;
     os << "| lhs";
     LT;
-    os << *expbBinary._lhs;
+    _lhs->Serialize(os);
     LT;
     os << "| rhs";
     LT;
-    os << *expbBinary._rhs;
+    _rhs->Serialize(os);
     DEC;
-    return os;
 }
 
-std::ostream &operator<<(std::ostream &os, const ExpbUnary &expbUnary) {
+void ExpbUnary::Serialize(std::ostream &os) {
     os << "+ expbUnary";
     ILT;
-    os << "| op\t" << Token::TagLookup(expbUnary._op);
+    os << "| op\t" << Token::TagLookup(_op);
     LT;
     os << "| oprand";
     LT;
-    os << *expbUnary._oprand;
+    _oprand->Serialize(os);
     DEC;
-    return os;
 }
 
-std::ostream &operator<<(std::ostream &os, const ExpbCons &expbCons) {
+void ExpbCons::Serialize(std::ostream &os) {
     os << "+ expbCons";
     ILT;
     os << "| first element";
     LT;
-    os << *expbCons._first;
+    _first->Serialize(os);
     LT;
     os << "| second element";
     LT;
-    os << *expbCons._second;
+    _second->Serialize(os);
     DEC;
-    return os;
 }
 
-std::ostream &operator<<(std::ostream &os, const ExpbCompound &expbCompound) {
+void ExpbCompound::Serialize(std::ostream &os) {
     os << "+ expbCompound";
     ILT;
     os << "| first clause";
     LT;
-    os << *expbCompound._first;
+    _first->Serialize(os);
     LT;
     os << "| second clause";
     LT;
-    os << *expbCompound._second;
+    _second->Serialize(os);
     DEC;
-    return os;
 }
 
-std::ostream &operator<<(std::ostream &os, const Expa &expa) {
-    os << "+ expa";
-    return os;
-}
-
-std::ostream &operator<<(std::ostream &os, const ExpaConstant &expaConstant) {
+void ExpaConstant::Serialize(std::ostream &os) {
     os << "+ expaConstant";
     ILT;
-    switch (expaConstant._root->tag) {
+    switch (_root->tag) {
         case Token::Int:
-            os << "| value\t" << expaConstant._ival;
+            os << "| value\t" << _ival;
             break;
         case Token::Float:
-            os << "| value\t" << expaConstant._fval;
+            os << "| value\t" << _fval;
             break;
         case Token::Bool:
-            os << "| value\t" << expaConstant._bval;
+            os << "| value\t" << _bval;
             break;
         case Token::String:
-            os << "| value\t" << expaConstant._sval;
+            os << "| value\t" << _sval;
             break;
         case Token::Unit:
             os << "| value\t" << "()";
@@ -149,60 +138,56 @@ std::ostream &operator<<(std::ostream &os, const ExpaConstant &expaConstant) {
             CompilePanic("unreachable expaConstant operator<<");
     }
     DEC;
-    return os;
 }
 
-std::ostream &operator<<(std::ostream &os, const ExpaIf &expaIf) {
+void ExpaIf::Serialize(std::ostream &os) {
     os << "+ expaIf";
     ILT;
     os << "+ condition expr";
     LT;
-    os << *expaIf._cond;
+    _cond->Serialize(os);
     LT;
     os << "+ then expr";
     LT;
-    os << *expaIf._then;
+    _then->Serialize(os);
 
-    if (expaIf._els != nullptr) {
+    if (_els != nullptr) {
         LT;
         os << "+ else expr";
         LT;
-        os << *expaIf._els;
+        _els->Serialize(os);
     }
     DEC;
-    return os;
 }
 
-std::ostream &operator<<(std::ostream &os, const ExpaWhile &expaWhile) {
+void ExpaWhile::Serialize(std::ostream &os) {
     os << "+ expaWhile";
     ILT;
     os << "+ condition expr";
     LT;
-    os << *expaWhile._cond;
+    _cond->Serialize(os);
     LT;
     os << "+ body expr";
     LT;
-    os << *expaWhile._body;
+    _body->Serialize(os);
     DEC;
-    return os;
 }
 
-std::ostream &operator<<(std::ostream &os, const ExpaLet &expaLet) {
+void ExpaLet::Serialize(std::ostream &os) {
     os << "+ expaLet";
     ILT;
     os << "+ var-exp pairs";
     INC;
-    for (auto item:*expaLet.varExpList) {
+    for (auto item:*varExpList) {
         LT;
-        os << *item.first;
+        item.first->Serialize(os);
         LT;
-        os << *item.second;
+        item.second->Serialize(os);
     }
     DEC;
     LT;
     os << "+ body expr";
     LT;
-    os << *expaLet._body;
+    _body->Serialize(os);
     DEC;
-    return os;
 }

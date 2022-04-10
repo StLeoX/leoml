@@ -36,4 +36,4 @@
 .idea
 src/cmake-build-debug
 
-*.txt
+./*.txt

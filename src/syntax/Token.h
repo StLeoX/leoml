@@ -223,6 +223,13 @@ public:
     // Expect the Peek token. Expect its token kind.
     const Token *Expect(int expect);
 
+    /// Expect
+    // Expect the Next Peek token.
+    const Token *ExpectNext(int expect) {
+        Next();
+        return Expect(expect);
+    }
+
     /// Try
     // Try the Peek token. If matching its token kind, then Next.
     // Try = Test + Next

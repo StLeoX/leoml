@@ -4,6 +4,7 @@
 // The Abstraction of ParseTree
 //
 
+
 #ifndef LEOML_PARSETREE_H
 #define LEOML_PARSETREE_H
 
@@ -28,7 +29,7 @@ public:
 
 //    virtual void Accept(Visitor *v) = 0;  // Terminate the visiting.
 
-    virtual std::ostream &operator<<(std::ostream &os, const ParseTreeNode &node) = 0;  // Serializate the node.
+    virtual void Serialize(std::ostream &os) = 0;  // Serialize the node.
 
 };
 
@@ -78,7 +79,7 @@ public:
         return new Program();
     }
 
-    friend std::ostream &operator<<(std::ostream &os, const Program &program);
+    virtual void Serialize(std::ostream &os);
 
 };
 
@@ -100,7 +101,7 @@ public:
 
     static Decl *New() { return new Decl(); };
 
-    friend std::ostream &operator<<(std::ostream &os, const Decl &decl);
+    virtual void Serialize(std::ostream &os);
 
 };
 
@@ -118,7 +119,7 @@ public:
 
     static Var *New(const Token *root) { return new Var(); }
 
-    friend std::ostream &operator<<(std::ostream &os, const Var &var);
+    virtual void Serialize(std::ostream &os);
 
 };
 
@@ -152,7 +153,7 @@ public:
 
     static Exp *New(const Token *token) { return new Exp(token); }
 
-    friend std::ostream &operator<<(std::ostream &os, const Exp &exp);
+    virtual void Serialize(std::ostream &os);
 
 };
 
@@ -182,7 +183,7 @@ public:
     static Expb *New(const Token *token) { return new Expb(token); }
 
     // Expb should not be directly serilizated.
-//    friend std::ostream &operator<<(std::ostream &os, const Expb &expb);
+//    virtual void Serialize(std::ostream &os);
 
 };
 
@@ -217,7 +218,7 @@ public:
         return new ExpbBinary(token, op, lhs, rhs);
     };
 
-    friend std::ostream &operator<<(std::ostream &os, const ExpbBinary &expbBinary);
+    virtual void Serialize(std::ostream &os);
 
 };
 
@@ -244,7 +245,7 @@ public:
 
     static ExpbUnary *New(const Token *token, int op, Expb *oprand) { return new ExpbUnary(token, op, oprand); };
 
-    friend std::ostream &operator<<(std::ostream &os, const ExpbUnary &expbUnary);
+    virtual void Serialize(std::ostream &os);
 
 };
 
@@ -267,7 +268,7 @@ public:
 
     static ExpbCons *New(const Token *token, Expb *first, Expb *second) { return new ExpbCons(token, first, second); }
 
-    friend std::ostream &operator<<(std::ostream &os, const ExpbCons &expbCons);
+    virtual void Serialize(std::ostream &os);
 
 };
 
@@ -294,7 +295,7 @@ public:
         return new ExpbCompound(token, token->tag, lhs, rhs);
     }
 
-    friend std::ostream &operator<<(std::ostream &os, const ExpbCompound &expbCompound);
+    virtual void Serialize(std::ostream &os);
 
 };
 
@@ -323,7 +324,8 @@ public:
 
     static Expa *New(const Token *token) { return new Expa(token); }
 
-    friend std::ostream &operator<<(std::ostream &os, const Expa &expa);
+    // Expa should not be directly serilizated.
+//    virtual void Serialize(std::ostream &os);
 
 };
 
@@ -376,7 +378,7 @@ public:
 
     static ExpaConstant *New(const Token *token, const std::string &val) { return new ExpaConstant(token, val); }
 
-    friend std::ostream &operator<<(std::ostream &os, const ExpaConstant &expaConstant);
+    virtual void Serialize(std::ostream &os);
 
 };
 
@@ -402,8 +404,7 @@ public:
         return new ExpaIf(token, cond, then, els);
     };
 
-    friend std::ostream &operator<<(std::ostream &os, const ExpaIf &expaIf);
-
+    virtual void Serialize(std::ostream &os);
 
 };
 
@@ -426,7 +427,7 @@ public:
 
     static ExpaWhile *New(const Token *token, Exp *cond, Exp *body) { return new ExpaWhile(token, cond, body); }
 
-    friend std::ostream &operator<<(std::ostream &os, const ExpaWhile &expaWhile);
+    virtual void Serialize(std::ostream &os);
 
 };
 
@@ -452,7 +453,7 @@ public:
         return new ExpaLet(token, body);
     }
 
-    friend std::ostream &operator<<(std::ostream &os, const ExpaLet &expaLet);
+    virtual void Serialize(std::ostream &os);
 
 };
 

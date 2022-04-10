@@ -2,8 +2,8 @@
 // Created by leo on 2022/4/4.
 //
 
-#include "Parser.h"
 
+#include "Parser.h"
 
 /// Parse Float
 // ParseConstant aux
@@ -238,6 +238,6 @@ Program *Parser::ParseProgram() {
 }
 
 std::ostream &operator<<(std::ostream &os, const Parser &parser) {
-    os << *parser._program;
+    parser._program->Serialize(os);
     return os;
 }
