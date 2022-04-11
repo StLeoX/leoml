@@ -109,7 +109,7 @@ Token *Lexer::ScanString(std::string &word) {
 Token *Lexer::SkipIdent() {
     PutBack();
     auto c = Next();
-    while (isalpha(c) || c == '_') {
+    while (isalpha(c) || isdigit(c) || c == '_') {
         c = Next();
     }
     PutBack();
@@ -122,10 +122,13 @@ Token *Lexer::SkipIdent() {
 Token *Lexer::SkipNumber() {
     PutBack();
     int tag = Token::Int;
+    int dotted = 0;
     auto c = Next();
     while (c == '.' || c == '_' || isdigit(c)) {
         if (c == '.') {
             tag = Token::Float;
+            dotted++;
+            if (dotted > 1) { break; }
         }
         c = Next();
     }

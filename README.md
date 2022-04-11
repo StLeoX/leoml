@@ -77,20 +77,23 @@ expblist ::= expb
 
 # exp base
 expb ::= expa # Expa
-       | expb + expb
-       | expb - expb
-       | expb * expb
-       | expb / expb
-       | expb < expb
-       | expb <= expb
-       | expb == expb
-       | epxb != epxb
-       | expb > expb
-       | expb >= expb # End of ExpbBinary
-       | ( expb, expb ) #cons # ExpbCons
-       | expb; expb # compound # ExpbCompound
-       | fst ( expb ) # fst
-       | snd ( expb ) # snd # ExpbUnary
+       | expa + expb
+       | expa - expb
+       | expa * expb
+       | expa / expb
+       | expa < expb
+       | expa <= expb
+       | expa == expb
+       | epxa != epxb
+       | expa > expb
+       | expa >= expb # End of ExpbBinary
+       | expa; expb # compound # ExpbCompound
+       | ( expa, expb ) #cons # ExpbCons
+       | fst ( expa, expb ) # fst
+       | snd ( expa, expb ) # snd 
+       | + expa 
+       | - expa # ExpbUnary
+
 
 # exp atom
 expa ::= var
@@ -108,7 +111,7 @@ constant ::= intl
            | ()
 
 intl ::= [0-9]+
-floatl ::= [0-9]*.[0-9]+
+floatl ::= [0-9]+.[0-9]+
 booll ::= true | false
 stringl ::= ".*"
 
@@ -183,4 +186,21 @@ Type System:
 7. 建立的TokenSequence实体来表示符号栈，实际上这**并不是理论上纯粹的栈**，这个栈可以看到PeekNext从而帮助判断，这个栈甚至是支持“倒带”看到PeekPrior（）。所以Parser也不是纯粹的LR(1) Parser，而是部分具备LR(2)的特征。
 8. 实际上，在做operator<<的部分，也是同样地在写`Producer Pattern`。
 9. 你会发现，在Parser里面使用最多的函数就是Next()，也就是所谓`eat`逻辑。
+10. 一个比较遗憾的地方是，我很喜欢`cons` kw，但在OCaml里面不需要cons就能直接构造`Piar` : (epxa, expb)。所以最后还是没支持cons kw。
+11. 一个非常坑的地方：二元运算符'+'和一元运算符'+'可以混用吗？尤其是如何区分： exp = var <u>+expa</u>  和 exp = <u>var+expa</u>，两者从ts来看完全一致，如果不区分二元运算符'+'和一元运算符'+'的话。
 
+
+
+### Schedule
+
+#### ToDo
+
+1. ExpbCompound Unimplemented, its No-Left-Recur Aux Class is unimpled.
+2. The Precedence of simple calculation is unimpled.
+
+
+
+#### Passed
+
+- If a then b;;
+- let sum (a,b) = a*b;;

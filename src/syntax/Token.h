@@ -153,10 +153,10 @@ public:
     bool IsEOF() const { return tag == END; }
 
     bool IsConstant() const {
-        return tag == Int || tag == Float || tag == String || tag == Bool || tag == Unit;
+        return tag == Int || tag == Float || tag == String || tag == Bool || tag == True || tag == False || tag == Unit;
     }
 
-    bool IsUnary() const { return tag == Fst || tag == Snd; }
+    bool IsUnary() const { return tag == '+' || tag == '-'; }
 
     bool IsBinary() const {
         return tag == '+' || tag == '-' || tag == '*' || tag == '/' || tag == '<' || tag == '>' || tag == Le ||

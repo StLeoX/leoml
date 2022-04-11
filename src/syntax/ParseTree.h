@@ -95,29 +95,9 @@ public:
     Exp *exp;
     VarList *varList;
 
-    virtual ~Decl() {
-        delete exp, varList;
-    };
+    virtual ~Decl();;
 
     static Decl *New() { return new Decl(); };
-
-    virtual void Serialize(std::ostream &os);
-
-};
-
-/// Var
-class Var : public ParseTreeNode {
-    template<typename T> friend
-    class TreeVisitor;
-
-    friend class Expa;
-
-private:
-    const Token *_root;
-public:
-    ~Var() { delete _root; };
-
-    static Var *New(const Token *root) { return new Var(); }
 
     virtual void Serialize(std::ostream &os);
 
@@ -189,7 +169,7 @@ public:
 
 /// Expb Binary
 /*
- * expb ::= expb BinaryOp expb
+ * expb ::= expa BinaryOp expb
  *
  * BinaryOp: +, -, *, /, <, >, <=, >=, ==, !=
  * */
@@ -198,23 +178,21 @@ class ExpbBinary : public Expb {
     class TreeVisitor;
 
 private:
-    Expb *_lhs;
+    Expa *_lhs;
     Expb *_rhs;
     int _op;
 
-    ExpbBinary(const Token *root, int op, Expb *lhs, Expb *rhs) : Expb(root), _lhs(lhs), _rhs(rhs), _op(op) {
+    ExpbBinary(const Token *token, int op, Expa *lhs, Expb *rhs) : Expb(token), _lhs(lhs), _rhs(rhs), _op(op) {
     }
 
 public:
-    ~ExpbBinary() {
-        delete _lhs, _rhs;
-    };
+    ~ExpbBinary();;
 
-    static ExpbBinary *New(const Token *token, Expb *lhs, Expb *rhs) {
+    static ExpbBinary *New(const Token *token, Expa *lhs, Expb *rhs) {
         return new ExpbBinary(token, token->tag, lhs, rhs);
     }
 
-    static ExpbBinary *New(const Token *token, int op, Expb *lhs, Expb *rhs) {
+    static ExpbBinary *New(const Token *token, int op, Expa *lhs, Expb *rhs) {
         return new ExpbBinary(token, op, lhs, rhs);
     };
 
@@ -224,9 +202,9 @@ public:
 
 /// Expb Unary
 /*
- * expb ::= UnaryOp ( expb )
+ * expb ::= UnaryOp expa
  * UnaryOp:
- *     fst, snd
+ *     +, -
  * */
 class ExpbUnary : public Expb {
     template<typename T> friend
@@ -251,22 +229,22 @@ public:
 
 /// Expb Cons
 /*
- * exp ::= ( first, second )
+ * expb ::= ( expa, expb )
  * */
 class ExpbCons : public Expb {
     template<typename T> friend
     class TreeVisitor;
 
 private:
-    Expb *_first;
+    Expa *_first;
     Expb *_second;
 
-    ExpbCons(const Token *token, Expb *first, Expb *second) : Expb(token), _first(first), _second(second) {}
+    ExpbCons(const Token *token, Expa *first, Expb *second) : Expb(token), _first(first), _second(second) {}
 
 public:
-    ~ExpbCons() { delete _first, _second; }
+    ~ExpbCons();
 
-    static ExpbCons *New(const Token *token, Expb *first, Expb *second) { return new ExpbCons(token, first, second); }
+    static ExpbCons *New(const Token *token, Expa *first, Expb *second) { return new ExpbCons(token, first, second); }
 
     virtual void Serialize(std::ostream &os);
 
@@ -281,19 +259,65 @@ class ExpbCompound : public Expb {
     class TreeVisitor;
 
 private:
-    Expb *_first;
+    Expa *_first;
     Expb *_second;
 
-    ExpbCompound(const Token *root, int op, Expb *lhs, Expb *rhs) : Expb(root), _first(lhs), _second(rhs) {
+    ExpbCompound(const Token *root, int op, Expa *lhs, Expb *rhs) : Expb(root), _first(lhs), _second(rhs) {
         assert(';' == op);
     }
 
 public:
-    ~ExpbCompound() { delete _first, _second; }
+    ~ExpbCompound();
 
-    static ExpbCompound *New(const Token *token, Expb *lhs, Expb *rhs) {
+    static ExpbCompound *New(const Token *token, Expa *lhs, Expb *rhs) {
         return new ExpbCompound(token, token->tag, lhs, rhs);
     }
+
+    virtual void Serialize(std::ostream &os);
+
+};
+
+/// Expb Fst
+/*
+ * expb ::= fst ( expa, expb )
+ * */
+class ExpbFst : public Expb {
+    template<typename T> friend
+    class TreeVisitor;
+
+private:
+    Expa *_first;
+    Expb *_second;
+
+    ExpbFst(const Token *token, Expa *first, Expb *second) : Expb(token), _first(first), _second(second) {}
+
+public:
+    ~ExpbFst();
+
+    static ExpbFst *New(const Token *token, Expa *first, Expb *second) { return new ExpbFst(token, first, second); }
+
+    virtual void Serialize(std::ostream &os);
+
+};
+
+/// ExpbSnd
+/*
+ * expb ::= snd ( expa, expb )
+ * */
+class ExpbSnd : public Expb {
+    template<typename T> friend
+    class TreeVisitor;
+
+private:
+    Expa *_first;
+    Expb *_second;
+
+    ExpbSnd(const Token *token, Expa *first, Expb *second) : Expb(token), _first(first), _second(second) {}
+
+public:
+    ~ExpbSnd();
+
+    static ExpbSnd *New(const Token *token, Expa *first, Expb *second) { return new ExpbSnd(token, first, second); }
 
     virtual void Serialize(std::ostream &os);
 
@@ -318,14 +342,29 @@ protected:
 public:
     ~Expa() {};
 
-    static Expa *New(Var *var) { return new Expa(var->_root); }
-
     static Expa *New(Exp *exp) { return new Expa(exp->_root); }
 
     static Expa *New(const Token *token) { return new Expa(token); }
 
     // Expa should not be directly serilizated.
 //    virtual void Serialize(std::ostream &os);
+
+};
+
+/// Var
+class Var : public Expa {
+    template<typename T> friend
+    class TreeVisitor;
+
+private:
+    Var(const Token *token) : Expa(token) {}
+
+public:
+    ~Var() { delete _root; };
+
+    static Var *New(const Token *token) { return new Var(token); }
+
+    virtual void Serialize(std::ostream &os);
 
 };
 

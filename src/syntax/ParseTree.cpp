@@ -32,18 +32,23 @@ void Decl::Serialize(std::ostream &os) {
         exp->Serialize(os);
         LT;
     }
-    os << "+ var list";
-    INC;
-    for (auto var:*varList) {
-        LT;
-        var->Serialize(os);
+    if (varList == nullptr || varList->empty()) {}
+    else if (varList->size() == 1) {
+        varList->front()->Serialize(os);
+    } else {
+        os << "+ var list";
+        INC;
+        for (auto var:*varList) {
+            LT;
+            var->Serialize(os);
+        }
+        DEC;
     }
-    DEC;
     DEC;
 }
 
-void Var::Serialize(std::ostream &os) {
-    os << "| var" << _root->str;
+Decl::~Decl() {
+    delete exp, varList;
 }
 
 void Exp::Serialize(std::ostream &os) {
@@ -53,20 +58,25 @@ void Exp::Serialize(std::ostream &os) {
         var->Serialize(os);
         LT;
     }
-    os << "+ expb list";  // todo
-    INC;
-    for (auto expb:*expbList) {
-        LT;
-        expb->Serialize(os);
+    if (expbList == nullptr || expbList->empty()) {}
+    else if (expbList->size() == 1) {
+        expbList->front()->Serialize(os);
+    } else {
+        os << "+ expb list";
+        INC;
+        for (auto expb:*expbList) {
+            LT;
+            expb->Serialize(os);
+        }
+        DEC;
     }
-    DEC;
     DEC;
 }
 
 void ExpbBinary::Serialize(std::ostream &os) {
     os << "+ expbBinary";
     ILT;
-    os << "| op\t" << Token::TagLookup(_op);
+    os << "| op  " << Token::TagLookup(_op);
     LT;
     os << "| lhs";
     LT;
@@ -78,10 +88,14 @@ void ExpbBinary::Serialize(std::ostream &os) {
     DEC;
 }
 
+ExpbBinary::~ExpbBinary() {
+    delete _lhs, _rhs;
+}
+
 void ExpbUnary::Serialize(std::ostream &os) {
     os << "+ expbUnary";
     ILT;
-    os << "| op\t" << Token::TagLookup(_op);
+    os << "| op  " << Token::TagLookup(_op);
     LT;
     os << "| oprand";
     LT;
@@ -102,6 +116,8 @@ void ExpbCons::Serialize(std::ostream &os) {
     DEC;
 }
 
+ExpbCons::~ExpbCons() { delete _first, _second; }
+
 void ExpbCompound::Serialize(std::ostream &os) {
     os << "+ expbCompound";
     ILT;
@@ -115,29 +131,63 @@ void ExpbCompound::Serialize(std::ostream &os) {
     DEC;
 }
 
-void ExpaConstant::Serialize(std::ostream &os) {
-    os << "+ expaConstant";
+ExpbCompound::~ExpbCompound() { delete _first, _second; }
+
+void ExpbFst::Serialize(std::ostream &os) {
+    os << "+ expbFst";
     ILT;
+    os << "| first element";
+    LT;
+    _first->Serialize(os);
+    LT;
+    os << "| second element";
+    LT;
+    _second->Serialize(os);
+    DEC;
+}
+
+ExpbFst::~ExpbFst() { delete _first, _second; }
+
+void ExpbSnd::Serialize(std::ostream &os) {
+    os << "+ expbSnd";
+    ILT;
+    os << "| first element";
+    LT;
+    _first->Serialize(os);
+    LT;
+    os << "| second element";
+    LT;
+    _second->Serialize(os);
+    DEC;
+}
+
+ExpbSnd::~ExpbSnd() { delete _first, _second; }
+
+void Var::Serialize(std::ostream &os) {
+    os << "| var  ident: " << _root->str;
+}
+
+void ExpaConstant::Serialize(std::ostream &os) {
+    os << "| expaConstant  value: ";
     switch (_root->tag) {
         case Token::Int:
-            os << "| value\t" << _ival;
+            os << _ival;
             break;
         case Token::Float:
-            os << "| value\t" << _fval;
+            os << _fval;
             break;
         case Token::Bool:
-            os << "| value\t" << _bval;
+            os << _bval;
             break;
         case Token::String:
-            os << "| value\t" << _sval;
+            os << _sval;
             break;
         case Token::Unit:
-            os << "| value\t" << "()";
+            os << "()";
             break;
         default:
             CompilePanic("unreachable expaConstant operator<<");
     }
-    DEC;
 }
 
 void ExpaIf::Serialize(std::ostream &os) {

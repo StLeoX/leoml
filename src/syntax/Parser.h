@@ -52,6 +52,12 @@ private:
     /// Parse ExpbCons
     ExpbCons *ParseExpbCons(const Token *token);
 
+    /// Parse ExpbFst
+    ExpbFst *ParseExpbFst(const Token *token);
+
+    /// Parse ExpbSnd
+    ExpbSnd *ParseExpbSnd(const Token *token);
+
     /// Parse ExpbCompound
     ExpbCompound *ParseExpbCompound(const Token *token);
 
