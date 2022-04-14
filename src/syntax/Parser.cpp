@@ -122,14 +122,8 @@ Expa *Parser::ParseExpa() {
 
 ExpbBinary *Parser::ParseExpbBinary(const Token *token) {
     auto lhs = ParseExpa();  // pop lhs
-//    auto mark = _ts.Mark();
-//    auto oper = _ts.Next();  // pop operator
-//    if (oper->IsEOF()) CompileError(oper, "premature end of input");
-//    if (!oper->IsBinary()) CompileError(oper, "unexpected binary operator");
-//    auto rhs_possible = ParseExpa();  // pop the possible rhs
-//    _ts.ResetTo(mark);
     auto rhs = ParseExpbBinaryRHS(0, lhs);  // parse rhs
-    return dynamic_cast<ExpbBinary *>(rhs);
+    return dynamic_cast<ExpbBinary *>(rhs);  // casting
 }
 
 Expb *Parser::ParseExpbBinaryRHS(int prec, Expb *lhs) {
@@ -155,11 +149,11 @@ Expb *Parser::ParseExpbBinaryRHS(int prec, Expb *lhs) {
 
 ExpbUnary *Parser::ParseExpbUnary(const Token *token) {
     auto oprand = ParseExpb();  // pop oprand
-    return ExpbUnary::New(token, token->tag, oprand);
+    return ExpbUnary::New(token, oprand);
 }
 
 ExpbCons *Parser::ParseExpbCons(const Token *token) {
-    auto first = ParseExpa();
+    auto first = ParseExpb();
     _ts.Expect(',');
     auto second = ParseExpb();
     _ts.Expect(')');
@@ -168,7 +162,7 @@ ExpbCons *Parser::ParseExpbCons(const Token *token) {
 
 ExpbFst *Parser::ParseExpbFst(const Token *token) {
     _ts.Expect('(');
-    auto fisrt = ParseExpa();
+    auto fisrt = ParseExpb();
     _ts.Expect(',');
     auto second = ParseExpb();
     _ts.Expect(')');
@@ -177,7 +171,7 @@ ExpbFst *Parser::ParseExpbFst(const Token *token) {
 
 ExpbSnd *Parser::ParseExpbSnd(const Token *token) {
     _ts.Expect('(');
-    auto fisrt = ParseExpa();
+    auto fisrt = ParseExpb();
     _ts.Expect(',');
     auto second = ParseExpb();
     _ts.Expect(')');
@@ -253,7 +247,7 @@ Exp *Parser::ParseExp() {
 Decl *Parser::ParseDecl() {
     auto peek = _ts.Next();
     auto ret = Decl::New();
-    // let...
+    // let... kind
     if (peek->tag == Token::Let) {
         ret->varList->push_back(ParseVar(_ts.Next()));
         if (_ts.Test('(')) {

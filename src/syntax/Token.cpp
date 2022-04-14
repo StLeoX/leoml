@@ -8,7 +8,7 @@
 
 const std::unordered_map<int, const char *> Token::TagMap{
         {'(',           ")"},
-        {')',           "("},
+        {')',           ")"},
         {'+',           "+"},
         {'-',           "-"},
         {'*',           "*"},

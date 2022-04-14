@@ -88,9 +88,9 @@ expb ::= expa  # Expa
        | expb > expb
        | expb >= expb # ExpbBinary
        | expa; expb # compound # ExpbCompound
-       | ( expa, expb ) #cons # ExpbCons
-       | fst ( expa, expb ) # fst
-       | snd ( expa, expb ) # snd 
+       | ( expb, expb ) #cons # ExpbCons
+       | fst ( expb, expb ) # fst
+       | snd ( expb, expb ) # snd 
        | + expa 
        | - expa # ExpbUnary
 
@@ -202,5 +202,3 @@ Type System:
 
 #### Passed
 
-- If a then b;;
-- let sum (a,b) = a*b;;

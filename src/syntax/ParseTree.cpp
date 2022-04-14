@@ -28,10 +28,6 @@ void Program::Serialize(std::ostream &os) {
 void Decl::Serialize(std::ostream &os) {
     os << "+ decl";
     ILT;
-    if (exp != nullptr) {
-        exp->Serialize(os);
-        LT;
-    }
     if (varList == nullptr || varList->empty()) {}
     else if (varList->size() == 1) {
         varList->front()->Serialize(os);
@@ -43,6 +39,10 @@ void Decl::Serialize(std::ostream &os) {
             var->Serialize(os);
         }
         DEC;
+    }
+    LT;
+    if (exp != nullptr) {
+        exp->Serialize(os);
     }
     DEC;
 }
@@ -99,22 +99,25 @@ void ExpbUnary::Serialize(std::ostream &os) {
     ILT;
     os << "| op  " << Token::TagLookup(_op);
     LT;
-    os << "| oprand";
-    LT;
+    os << "+ oprand";
+    ILT;
     _oprand->Serialize(os);
+    DEC;
     DEC;
 }
 
 void ExpbCons::Serialize(std::ostream &os) {
     os << "+ expbCons";
     ILT;
-    os << "| first element";
-    LT;
+    os << "+ first element";
+    ILT;
     _first->Serialize(os);
+    DEC;
     LT;
-    os << "| second element";
-    LT;
+    os << "+ second element";
+    ILT;
     _second->Serialize(os);
+    DEC;
     DEC;
 }
 
@@ -123,13 +126,15 @@ ExpbCons::~ExpbCons() { delete _first, _second; }
 void ExpbCompound::Serialize(std::ostream &os) {
     os << "+ expbCompound";
     ILT;
-    os << "| first clause";
-    LT;
+    os << "+ first clause";
+    ILT;
     _first->Serialize(os);
+    DEC;
     LT;
-    os << "| second clause";
-    LT;
+    os << "+ second clause";
+    ILT;
     _second->Serialize(os);
+    DEC;
     DEC;
 }
 
@@ -138,13 +143,15 @@ ExpbCompound::~ExpbCompound() { delete _first, _second; }
 void ExpbFst::Serialize(std::ostream &os) {
     os << "+ expbFst";
     ILT;
-    os << "| first element";
-    LT;
+    os << "+ first element";
+    ILT;
     _first->Serialize(os);
+    DEC;
     LT;
-    os << "| second element";
-    LT;
+    os << "+ second element";
+    ILT;
     _second->Serialize(os);
+    DEC;
     DEC;
 }
 
@@ -153,13 +160,15 @@ ExpbFst::~ExpbFst() { delete _first, _second; }
 void ExpbSnd::Serialize(std::ostream &os) {
     os << "+ expbSnd";
     ILT;
-    os << "| first element";
-    LT;
+    os << "+ first element";
+    ILT;
     _first->Serialize(os);
+    DEC;
     LT;
-    os << "| second element";
-    LT;
+    os << "+ second element";
+    ILT;
     _second->Serialize(os);
+    DEC;
     DEC;
 }
 

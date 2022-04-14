@@ -217,7 +217,7 @@ private:
     Expb *_oprand;
     int _op;
 
-    ExpbUnary(const Token *root, int op, Expb *oprand) : Expb(root), _oprand(oprand) {}
+    ExpbUnary(const Token *root, int op, Expb *oprand) : Expb(root), _op(op), _oprand(oprand) {}
 
 public:
     ~ExpbUnary() { delete _oprand; };
@@ -239,15 +239,15 @@ class ExpbCons : public Expb {
     class TreeVisitor;
 
 private:
-    Expa *_first;
+    Expb *_first;
     Expb *_second;
 
-    ExpbCons(const Token *token, Expa *first, Expb *second) : Expb(token), _first(first), _second(second) {}
+    ExpbCons(const Token *token, Expb *first, Expb *second) : Expb(token), _first(first), _second(second) {}
 
 public:
     ~ExpbCons();
 
-    static ExpbCons *New(const Token *token, Expa *first, Expb *second) { return new ExpbCons(token, first, second); }
+    static ExpbCons *New(const Token *token, Expb *first, Expb *second) { return new ExpbCons(token, first, second); }
 
     virtual void Serialize(std::ostream &os);
 
@@ -265,9 +265,7 @@ private:
     Expa *_first;
     Expb *_second;
 
-    ExpbCompound(const Token *root, int op, Expa *lhs, Expb *rhs) : Expb(root), _first(lhs), _second(rhs) {
-        assert(';' == op);
-    }
+    ExpbCompound(const Token *root, int op, Expa *lhs, Expb *rhs) : Expb(root), _first(lhs), _second(rhs) {}
 
 public:
     ~ExpbCompound();
@@ -289,15 +287,15 @@ class ExpbFst : public Expb {
     class TreeVisitor;
 
 private:
-    Expa *_first;
+    Expb *_first;
     Expb *_second;
 
-    ExpbFst(const Token *token, Expa *first, Expb *second) : Expb(token), _first(first), _second(second) {}
+    ExpbFst(const Token *token, Expb *first, Expb *second) : Expb(token), _first(first), _second(second) {}
 
 public:
     ~ExpbFst();
 
-    static ExpbFst *New(const Token *token, Expa *first, Expb *second) { return new ExpbFst(token, first, second); }
+    static ExpbFst *New(const Token *token, Expb *first, Expb *second) { return new ExpbFst(token, first, second); }
 
     virtual void Serialize(std::ostream &os);
 
@@ -312,15 +310,15 @@ class ExpbSnd : public Expb {
     class TreeVisitor;
 
 private:
-    Expa *_first;
+    Expb *_first;
     Expb *_second;
 
-    ExpbSnd(const Token *token, Expa *first, Expb *second) : Expb(token), _first(first), _second(second) {}
+    ExpbSnd(const Token *token, Expb *first, Expb *second) : Expb(token), _first(first), _second(second) {}
 
 public:
     ~ExpbSnd();
 
-    static ExpbSnd *New(const Token *token, Expa *first, Expb *second) { return new ExpbSnd(token, first, second); }
+    static ExpbSnd *New(const Token *token, Expb *first, Expb *second) { return new ExpbSnd(token, first, second); }
 
     virtual void Serialize(std::ostream &os);
 
