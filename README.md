@@ -63,7 +63,7 @@ decllist ::= decl
            | decllist decl
 		  
 decl ::= let var [( varlist )]? = exp ;;  # varlist optional
-       | exp ;;
+       | var;;
 
 varlist ::= var
           | varlist , var
@@ -76,17 +76,17 @@ expblist ::= expb
           | expblist expb
 
 # exp base
-expb ::= expa # Expa
-       | expa + expb
-       | expa - expb
-       | expa * expb
-       | expa / expb
-       | expa < expb
-       | expa <= expb
-       | expa == expb
-       | epxa != epxb
-       | expa > expb
-       | expa >= expb # End of ExpbBinary
+expb ::= expa  # Expa
+       | expb + expb
+       | expb - expb
+       | expb * expb
+       | expb / expb
+       | expb < expb
+       | expb <= expb
+       | expb == expb
+       | expb != expb
+       | expb > expb
+       | expb >= expb # ExpbBinary
        | expa; expb # compound # ExpbCompound
        | ( expa, expb ) #cons # ExpbCons
        | fst ( expa, expb ) # fst

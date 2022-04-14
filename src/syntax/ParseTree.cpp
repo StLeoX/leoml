@@ -78,13 +78,15 @@ void ExpbBinary::Serialize(std::ostream &os) {
     ILT;
     os << "| op  " << Token::TagLookup(_op);
     LT;
-    os << "| lhs";
-    LT;
+    os << "+ lhs";
+    ILT;
     _lhs->Serialize(os);
+    DEC;
     LT;
-    os << "| rhs";
-    LT;
+    os << "+ rhs";
+    ILT;
     _rhs->Serialize(os);
+    DEC;
     DEC;
 }
 
@@ -168,7 +170,7 @@ void Var::Serialize(std::ostream &os) {
 }
 
 void ExpaConstant::Serialize(std::ostream &os) {
-    os << "| expaConstant  value: ";
+    os << "| expaConstant  type: " << Token::TagLookup(_root->tag) << "  value:  ";
     switch (_root->tag) {
         case Token::Int:
             os << _ival;
@@ -177,7 +179,7 @@ void ExpaConstant::Serialize(std::ostream &os) {
             os << _fval;
             break;
         case Token::Bool:
-            os << _bval;
+            os << _bval ? "true" : "false";
             break;
         case Token::String:
             os << _sval;

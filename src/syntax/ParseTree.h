@@ -84,6 +84,9 @@ public:
 };
 
 /// Decl
+/*
+ * decl ::= let var [( varlist )]? = exp ;;  # varlist optional
+ * */
 class Decl : public ParseTreeNode {
     template<typename T> friend
     class TreeVisitor;
@@ -178,21 +181,21 @@ class ExpbBinary : public Expb {
     class TreeVisitor;
 
 private:
-    Expa *_lhs;
+    Expb *_lhs;
     Expb *_rhs;
     int _op;
 
-    ExpbBinary(const Token *token, int op, Expa *lhs, Expb *rhs) : Expb(token), _lhs(lhs), _rhs(rhs), _op(op) {
+    ExpbBinary(const Token *token, int op, Expb *lhs, Expb *rhs) : Expb(token), _lhs(lhs), _rhs(rhs), _op(op) {
     }
 
 public:
     ~ExpbBinary();;
 
-    static ExpbBinary *New(const Token *token, Expa *lhs, Expb *rhs) {
+    static ExpbBinary *New(const Token *token, Expb *lhs, Expb *rhs) {
         return new ExpbBinary(token, token->tag, lhs, rhs);
     }
 
-    static ExpbBinary *New(const Token *token, int op, Expa *lhs, Expb *rhs) {
+    static ExpbBinary *New(const Token *token, int op, Expb *lhs, Expb *rhs) {
         return new ExpbBinary(token, op, lhs, rhs);
     };
 

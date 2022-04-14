@@ -46,6 +46,9 @@ private:
     /// Parse ExpbBinary
     ExpbBinary *ParseExpbBinary(const Token *token);
 
+    /// Parse ExpbBinary. Precedence Aux
+    Expb * ParseExpbBinaryRHS(int prec, Expb *lhs);
+
     /// Parse ExpbUnary
     ExpbUnary *ParseExpbUnary(const Token *token);
 
@@ -79,8 +82,8 @@ private:
     /// Parse ExpaLet
     ExpaLet *ParseExpaLet(const Token *token);
 
-    /// Parse PExp
-    Expa *ParsePExp(const Token *token);
+    /// Parse ExpaParen
+    Expa *ParseExpaParen(const Token *token);
 };
 
 

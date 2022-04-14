@@ -75,7 +75,7 @@ ExpaWhile *Parser::ParseExpaWhile(const Token *token) {
 ExpaLet *Parser::ParseExpaLet(const Token *token) {
     VarExpList varExpList = {};
     do {
-        auto var = ParseVar(token);
+        auto var = ParseVar(_ts.Next());
         _ts.Expect('=');  // "=" required
         auto exp = ParseExp();
         varExpList.push_back(std::pair{var, exp});
@@ -87,7 +87,7 @@ ExpaLet *Parser::ParseExpaLet(const Token *token) {
     return ret;
 }
 
-Expa *Parser::ParsePExp(const Token *token) {
+Expa *Parser::ParseExpaParen(const Token *token) {
     auto exp = Parser::ParseExp();
     _ts.Expect(Token::RP);
     return Expa::New(exp);
@@ -112,20 +112,45 @@ Expa *Parser::ParseExpa() {
         case Token::Let:
             return ParseExpaLet(peek);
         case Token::LP:
-            return ParsePExp(peek);
+            return ParseExpaParen(peek);
         default:
-            CompileError(peek, "unexpected expa");
             return nullptr;
     }
+    CompileError(peek, "unreachable");
+    return nullptr;
 }
 
 ExpbBinary *Parser::ParseExpbBinary(const Token *token) {
     auto lhs = ParseExpa();  // pop lhs
-    auto oper = _ts.Next();  // pop operator
-    if (oper->IsEOF()) CompileError(oper, "premature end of input");
-    if (!oper->IsBinary()) CompileError(oper, "unexpected binary operator");
-    auto rhs = ParseExpb();
-    return ExpbBinary::New(token, oper->tag, lhs, rhs);
+//    auto mark = _ts.Mark();
+//    auto oper = _ts.Next();  // pop operator
+//    if (oper->IsEOF()) CompileError(oper, "premature end of input");
+//    if (!oper->IsBinary()) CompileError(oper, "unexpected binary operator");
+//    auto rhs_possible = ParseExpa();  // pop the possible rhs
+//    _ts.ResetTo(mark);
+    auto rhs = ParseExpbBinaryRHS(0, lhs);  // parse rhs
+    return dynamic_cast<ExpbBinary *>(rhs);
+}
+
+Expb *Parser::ParseExpbBinaryRHS(int prec, Expb *lhs) {
+    while (true) {
+        auto curToken = _ts.Peek();
+        int curPrec = Token::PrecLookup(curToken->tag);
+        if (curPrec < prec)
+            return lhs;
+        auto oper = _ts.Next();  // pop operator
+        if (oper->IsEOF()) CompileError(oper, "premature end of input");
+        if (!oper->IsBinary()) CompileError(oper, "unexpected binary operator");
+        Expb *rhs = ParseExpa();
+        if (rhs == nullptr) return nullptr;
+        auto nextToken = _ts.Peek();
+        int nextPrec = Token::PrecLookup(nextToken->tag);
+        if (curPrec < nextPrec) {
+            rhs = ParseExpbBinaryRHS(curPrec + 1, rhs);
+            if (rhs == nullptr) return nullptr;
+        }
+        lhs = ExpbBinary::New(curToken, lhs, rhs);
+    }
 }
 
 ExpbUnary *Parser::ParseExpbUnary(const Token *token) {
@@ -241,14 +266,19 @@ Decl *Parser::ParseDecl() {
         _ts.Expect('=');
         ret->exp = ParseExp();
         _ts.Expect(Token::Dsemi);
+        return ret;
     }
-        // exp kind
-    else {
-        _ts.PutBack();
-        ret->exp = ParseExp();
+        // var kind
+    else if (peek->tag == Token::Var) {
+        ret->varList->push_back(ParseVar(peek));
         _ts.Expect(Token::Dsemi);
+        return ret;
+    } else {
+        CompileError(peek, "unexpected decl start");
+        return nullptr;
     }
-    return ret;
+    CompileError(peek, "unreachable");
+    return nullptr;
 }
 
 Program *Parser::ParseProgram() {

@@ -52,6 +52,9 @@ private:
     static const std::unordered_map<int, const char *> TagMap;
 
     static const std::unordered_map<std::string, int> KwMap;
+
+    static const std::unordered_map<int, int> PrecMap;
+
 public:
     // token enum
     enum {
@@ -75,9 +78,6 @@ public:
         Ge,// ">="
         Eq,// "=="
         Ne,// "!="
-        True,// "true"
-        False,// "false"
-        Unit,// "()"
 
         // Keywords
         Let = 140,// "let"
@@ -99,8 +99,9 @@ public:
 
         // data type enum
         Var = 180,
-        Int,
+        Unit,// "()"
         Bool,
+        Int,
         Float,
         String,
 
@@ -131,8 +132,12 @@ public:
 
     virtual ~Token() = default;
 
-    // Aux: KwMap & TagMap
-    static const char *TagLookup(int tag);
+    // Aux: KwMap & TagMap & PrecMap
+    static const char *TagLookup(int tag) {
+        auto ret = TagMap.find(tag);
+        if (ret == TagMap.end()) { return nullptr; }
+        return ret->second;
+    }
 
     static int KwLookup(std::string kw) {
         auto ret = KwMap.find(kw);
@@ -150,10 +155,16 @@ public:
         return ret;
     }
 
+    static int PrecLookup(int tag) {
+        auto ret = PrecMap.find(tag);
+        if (ret == PrecMap.end()) { return -1; }
+        return ret->second;
+    }
+
     bool IsEOF() const { return tag == END; }
 
     bool IsConstant() const {
-        return tag == Int || tag == Float || tag == String || tag == Bool || tag == True || tag == False || tag == Unit;
+        return tag == Int || tag == Float || tag == String || tag == Bool || tag == Unit;
     }
 
     bool IsUnary() const { return tag == '+' || tag == '-'; }

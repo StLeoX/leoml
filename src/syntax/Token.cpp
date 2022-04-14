@@ -7,38 +7,44 @@
 #include "error.hpp"
 
 const std::unordered_map<int, const char *> Token::TagMap{
-        {'(',          ")"},
-        {')',          "("},
-        {'+',          "+"},
-        {'-',          "-"},
-        {'*',          "*"},
-        {'/',          "/"},
-        {',',          ","},
-        {';',          ";"},
-        {'<',          "<"},
-        {'>',          ">"},
-        {'=',          "="},
+        {'(',           ")"},
+        {')',           "("},
+        {'+',           "+"},
+        {'-',           "-"},
+        {'*',           "*"},
+        {'/',           "/"},
+        {',',           ","},
+        {';',           ";"},
+        {'<',           "<"},
+        {'>',           ">"},
+        {'=',           "="},
 
-        {Token::Dsemi, ";;"},
-        {Token::Le,    "<="},
-        {Token::Ge,    ">="},
-        {Token::Eq,    "=="},
-        {Token::Ne,    "!="},
-        {Token::Unit,  "()"},
+        {Token::Dsemi,  ";;"},
+        {Token::Le,     "<="},
+        {Token::Ge,     ">="},
+        {Token::Eq,     "=="},
+        {Token::Ne,     "!="},
+        {Token::Unit,   "()"},
 
         // Other Expected Token Kind
-        {Token::And,   "and"},
-        {Token::In,    "in"},
-        {Token::Then,  "then"},
-        {Token::Else,  "else"},
-        {Token::Do,    "do"},
-        {Token::Done,  "done"},
+        {Token::And,    "and"},
+        {Token::In,     "in"},
+        {Token::Then,   "then"},
+        {Token::Else,   "else"},
+        {Token::Do,     "do"},
+        {Token::Done,   "done"},
 
+        // Type Name
+        {Token::Unit,   "unit"},
+        {Token::Bool,   "bool"},
+        {Token::Int,    "int"},
+        {Token::Float,  "float"},
+        {Token::String, "string"},
 };
 
 const std::unordered_map<std::string, int> Token::KwMap{
-        {"true",  Token::True},
-        {"false", Token::False},
+        {"true",  Token::Bool},
+        {"false", Token::Bool},
 
         {"let",   Token::Let},
         {"and",   Token::And},
@@ -56,17 +62,34 @@ const std::unordered_map<std::string, int> Token::KwMap{
         {"snd",   Token::Snd},
 };
 
+const std::unordered_map<int, int> Token::PrecMap{
+        {Token::Semi,  1},
+
+        {Token::If,    2},
+        {Token::While, 2},
+        {Token::Let,   2},
+
+        {Token::Lt,    3},
+        {Token::Gt,    3},
+        {Token::Le,    3},
+        {Token::Ge,    3},
+        {Token::Eq,    3},
+        {Token::Ne,    3},
+
+        {Token::Add,   4},
+        {Token::Sub,   4},
+
+        {Token::Mul,   5},
+        {Token::Div,   5},
+
+        {Token::LP,    6},
+};
+
 std::ostream &operator<<(std::ostream &os, const Token &token) {
     os << "tag: " << token.tag <<
        "\tstr: " << token.str <<
        "\tloc: " << token.loc;
     return os;
-}
-
-const char *Token::TagLookup(int tag) {
-    auto ret = TagMap.find(tag);
-    if (ret == TagMap.end()) { return nullptr; }
-    return ret->second;
 }
 
 TokenSequence TokenSequence::GetLine() {
