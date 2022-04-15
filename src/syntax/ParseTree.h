@@ -38,6 +38,10 @@ class Decl;  // Decl
 
 using DeclList = std::list<Decl *>; // DeclList
 
+class Func;  // Func
+
+class FuncCall;  // FuncCall
+
 class Var;
 
 using VarList = std::list<Var *>; // Varlist
@@ -67,6 +71,9 @@ class ExpaLet;
 
 /// Program
 class Program : public ParseTreeNode {
+    template<typename T> friend
+    class TreeVisitor;
+
 private:
     Program() : declList(new DeclList) {};
 
@@ -85,22 +92,31 @@ public:
 
 /// Decl
 /*
- * decl ::= let var [( varlist )]? = exp ;;  # varlist optional
+ * decl ::= let funcDecl = exp ;;  # varlist optional
+ *        | var;;
+ * As the top NoTerminal, decl works like an union.
+ * But for concept, decl is more like stmt.
  * */
 class Decl : public ParseTreeNode {
     template<typename T> friend
     class TreeVisitor;
 
-protected:
-    Decl() : varList(new VarList) {};
-
 public:
+    // decl enum
+    enum {
+        VarDecl = 0,
+        FuncDecl,
+        AssignDecl,
+    };
+
+    Var *var;
+    Func *func;
     Exp *exp;
-    VarList *varList;
+    int kind;
 
-    virtual ~Decl();;
+    virtual ~Decl();
 
-    static Decl *New() { return new Decl(); };
+    static Decl *New() { return new Decl(); }
 
     virtual void Serialize(std::ostream &os);
 
@@ -119,11 +135,11 @@ class Exp : public ParseTreeNode {
     template<typename T> friend
     class TreeVisitor;
 
-    friend class Decl;
-
     friend class Expa;
 
 protected:
+    Exp() {}
+
     const Token *_root;
 
     Exp(const Token *token) : _root(token), expbList(new ExpbList) {};
@@ -135,6 +151,54 @@ public:
     virtual ~Exp() { delete _root, var, expbList; };
 
     static Exp *New(const Token *token) { return new Exp(token); }
+
+    virtual void Serialize(std::ostream &os);
+
+};
+
+/// Func
+/*
+ * func ::= var [( varlist )]?  # varlist optional
+ * func alias funcDecl
+ * */
+class Func : public ParseTreeNode {
+    template<typename T> friend
+    class TreeVisitor;
+
+protected:
+    Func() : argList(new VarList) {}
+
+public:
+    Var *name;
+    Exp *body;
+    VarList *argList;
+
+    virtual ~Func() { delete body, argList; }
+
+    static Func *New() { return new Func(); }
+
+    virtual void Serialize(std::ostream &os);
+
+};
+
+/// FuncCall
+/*
+ * funcCall extends funcDecl:
+ *     funcCall has the return value as Exp*
+ * */
+class FuncCall : public Func, public Exp {
+    template<typename T> friend
+    class TreeVisitor;
+
+private:
+    FuncCall() {}
+
+public:
+    Exp *retValue;
+
+    ~FuncCall() { delete retValue; }
+
+    static FuncCall *New() { return new FuncCall(); }
 
     virtual void Serialize(std::ostream &os);
 
@@ -364,6 +428,8 @@ public:
     ~Var() { delete _root; };
 
     static Var *New(const Token *token) { return new Var(token); }
+
+    std::string GetStr() { return _root->str; }
 
     virtual void Serialize(std::ostream &os);
 

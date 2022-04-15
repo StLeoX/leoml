@@ -43,11 +43,11 @@ If no output file, then print to the stdout.
 >
 > fst, snd 
 >
-> 
+> rec
 >
 > > Todo:
 > >
-> > rec, fun
+> > fun
 > >
 > > match, with
 > >
@@ -62,31 +62,38 @@ program ::= decllist eof
 decllist ::= decl
            | decllist decl
 		  
-decl ::= let var [( varlist )]? = exp ;;  # varlist optional
+decl ::= let funcDecl = exp;;
+       | let var = exp;;
        | var;;
 
 varlist ::= var
           | varlist , var
+# func
+funcDecl ::= [rec]? var [( varlist )]?  # varlist optional
+funcCall ::= var [( varlist )]?  # varlist optional
 
 # exp
 exp ::= var expblist
       | expb
+      | funcCall
 
 expblist ::= expb
           | expblist expb
 
 # exp base
 expb ::= expa  # Expa
-       | expb + expb
-       | expb - expb
        | expb * expb
        | expb / expb
+       | expb + expb
+       | expb - expb
        | expb < expb
        | expb <= expb
        | expb == expb
-       | expb != expb
+       | expb <> expb
+       | expb >= expb
        | expb > expb
-       | expb >= expb # ExpbBinary
+       | expb && expb
+       | expb || expb # ExpbBinary
        | expa; expb # compound # ExpbCompound
        | ( expb, expb ) #cons # ExpbCons
        | fst ( expb, expb ) # fst
@@ -125,6 +132,8 @@ comment ::= (* ... *)
 ### Precedence
 
 ```
+Highest -> Lowest:
+
 1. ( )  left associative
 
 2. . left associative
@@ -133,17 +142,15 @@ comment ::= (* ... *)
 
 4. + - left associative
 
-5. <= < > >= == left associative
+5. < <= == <> >= > left associative
 
-6. -> :: right associative
+6. && left associative
 
-7. if then else
+7. || left associative
 
-8. := left associative
+9. if-then-else; while-do-done
 
-9. ; left associative
-
-10. ! ref right associative
+10. ; left associative
 
 ```
 
@@ -188,6 +195,7 @@ Type System:
 9. 你会发现，在Parser里面使用最多的函数就是Next()，也就是所谓`eat`逻辑。
 10. 一个比较遗憾的地方是，我很喜欢`cons` kw，但在OCaml里面不需要cons就能直接构造`Piar` : (epxa, expb)。所以最后还是没支持cons kw。
 11. 一个非常坑的地方：二元运算符'+'和一元运算符'+'可以混用吗？尤其是如何区分： exp = var <u>+expa</u>  和 exp = <u>var+expa</u>，两者从ts来看完全一致，如果不区分二元运算符'+'和一元运算符'+'的话。
+12. `func`应该从`decl`中独立出来，从而达成复用。且无参函数不应该携带括号以接收参数，因为Token`()`已经被识别为Token::Unit。
 
 
 
@@ -195,8 +203,7 @@ Type System:
 
 #### ToDo
 
-1. ExpbCompound Unimplemented, its No-Left-Recur Aux Class is unimpled.
-2. The Precedence of simple calculation is unimpled.
+1.Eval: The Precedence of simple calculation is unimpled.
 
 
 

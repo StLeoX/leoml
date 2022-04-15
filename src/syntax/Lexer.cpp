@@ -54,6 +54,7 @@ Token *Lexer::Scan() {
             else return MakeToken(Token::Semi);
         case '<':
             if (Try('=')) return MakeToken(Token::Le);
+            if (Try('>')) return MakeToken(Token::Ne);
             else return MakeToken(Token::Lt);
         case '>':
             if (Try('=')) return MakeToken(Token::Ge);
@@ -61,12 +62,17 @@ Token *Lexer::Scan() {
         case '=':
             if (Try('=')) return MakeToken(Token::Eq);
             else return MakeToken(Token::Assign);
+        case '&':
+            if (Try('&')) return MakeToken(Token::An);
+            CompilePanic("Not Support & Currently.");
+            return nullptr;
+        case '|':
+            if (Try('|')) return MakeToken(Token::Or);
+            CompilePanic("Not Support | Currently.");
+            return nullptr;
         case '!':
-            if (Try('=')) return MakeToken(Token::Ne);
-            else {
-                CompilePanic("Not Support Deref Currently.");
-                return nullptr;
-            }
+            CompilePanic("Not Support ! Currently.");
+            return nullptr;
         case '0'...'9':
             return SkipNumber();
         case '\"':

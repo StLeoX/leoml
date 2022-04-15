@@ -26,34 +26,40 @@ void Program::Serialize(std::ostream &os) {
 }
 
 void Decl::Serialize(std::ostream &os) {
-    os << "+ decl";
-    ILT;
-    if (varList == nullptr || varList->empty()) {}
-    else if (varList->size() == 1) {
-        varList->front()->Serialize(os);
-    } else {
-        os << "+ var list";
-        INC;
-        for (auto var:*varList) {
-            LT;
+    switch (kind) {
+        case FuncDecl:
+            func->Serialize(os);
+            break;
+        case VarDecl:
+            os << "+ var decl";
+            ILT;
             var->Serialize(os);
-        }
-        DEC;
+            DEC;
+            break;
+        case AssignDecl:
+            os << "+ assign decl";
+            ILT;
+            os << "+ left value";
+            ILT;
+            var->Serialize(os);
+            DEC;
+            LT;
+            os << "+ right value";
+            ILT;
+            exp->Serialize(os);
+            DEC;
+            DEC;
+            break;
+        default:
+            CompilePanic("unreachable");
     }
-    LT;
-    if (exp != nullptr) {
-        exp->Serialize(os);
-    }
-    DEC;
 }
 
 Decl::~Decl() {
-    delete exp, varList;
+    delete var, func;
 }
 
 void Exp::Serialize(std::ostream &os) {
-    os << "+ exp";
-    ILT;
     if (var != nullptr) {
         var->Serialize(os);
         LT;
@@ -69,6 +75,50 @@ void Exp::Serialize(std::ostream &os) {
             expb->Serialize(os);
         }
         DEC;
+    }
+}
+
+void Func::Serialize(std::ostream &os) {
+    os << "+ func decl";
+    os << "  name:  " << name->GetStr();
+    ILT;
+    os << "+ arg list";
+    INC;
+    for (auto var:*argList) {
+        LT;
+        var->Serialize(os);
+    }
+    DEC;
+    LT;
+    os << "+ body";
+    if (body != nullptr) {
+        ILT;
+        body->Serialize(os);
+        DEC;
+    }
+    DEC;
+}
+
+void FuncCall::Serialize(std::ostream &os) {
+    os << "+ func call";
+    os << "  name:  " << name->GetStr();
+    ILT;
+    os << "+ arg list";
+    INC;
+    for (auto var:*argList) {
+        LT;
+        var->Serialize(os);
+    }
+    DEC;
+    if (body != nullptr) {
+        LT;
+        os << "+ body";
+        body->Serialize(os);
+    }
+    if (retValue != nullptr) {
+        LT;
+        os << "+ retValue";
+        retValue->Serialize(os);
     }
     DEC;
 }

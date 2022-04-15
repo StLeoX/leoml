@@ -37,6 +37,12 @@ private:
     /// Parse Decl
     Decl *ParseDecl();
 
+    /// Parse FuncDecl
+    Func *ParseFunc(const Token *token);
+
+    /// Parse FuncCall
+    FuncCall *ParseFuncCall(const Token *token);
+
     /// Parse Exp
     Exp *ParseExp();
 
@@ -47,7 +53,7 @@ private:
     ExpbBinary *ParseExpbBinary(const Token *token);
 
     /// Parse ExpbBinary. Precedence Aux
-    Expb * ParseExpbBinaryRHS(int prec, Expb *lhs);
+    Expb *ParseExpbBinaryRHS(int prec, Expb *lhs);
 
     /// Parse ExpbUnary
     ExpbUnary *ParseExpbUnary(const Token *token);

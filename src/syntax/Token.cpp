@@ -23,8 +23,10 @@ const std::unordered_map<int, const char *> Token::TagMap{
         {Token::Le,     "<="},
         {Token::Ge,     ">="},
         {Token::Eq,     "=="},
-        {Token::Ne,     "!="},
+        {Token::Ne,     "<>"},
         {Token::Unit,   "()"},
+        {Token::An,     "&&"},
+        {Token::Or,     "||"},
 
         // Other Expected Token Kind
         {Token::And,    "and"},
@@ -33,6 +35,7 @@ const std::unordered_map<int, const char *> Token::TagMap{
         {Token::Else,   "else"},
         {Token::Do,     "do"},
         {Token::Done,   "done"},
+        {Token::Rec,    "rec"},
 
         // Type Name
         {Token::Unit,   "unit"},
@@ -47,6 +50,7 @@ const std::unordered_map<std::string, int> Token::KwMap{
         {"false", Token::Bool},
 
         {"let",   Token::Let},
+        {"rec",   Token::Rec},
         {"and",   Token::And},
         {"in",    Token::In},
 
@@ -63,26 +67,30 @@ const std::unordered_map<std::string, int> Token::KwMap{
 };
 
 const std::unordered_map<int, int> Token::PrecMap{
-        {Token::Semi,  1},
+        {Token::Semi,  1},  // lowest
 
         {Token::If,    2},
         {Token::While, 2},
         {Token::Let,   2},
 
-        {Token::Lt,    3},
-        {Token::Gt,    3},
-        {Token::Le,    3},
-        {Token::Ge,    3},
-        {Token::Eq,    3},
-        {Token::Ne,    3},
+        {Token::Or,    3},
 
-        {Token::Add,   4},
-        {Token::Sub,   4},
+        {Token::An,    4},
 
-        {Token::Mul,   5},
-        {Token::Div,   5},
+        {Token::Lt,    5},
+        {Token::Gt,    5},
+        {Token::Le,    5},
+        {Token::Ge,    5},
+        {Token::Eq,    5},
+        {Token::Ne,    5},
 
-        {Token::LP,    6},
+        {Token::Add,   6},
+        {Token::Sub,   6},
+
+        {Token::Mul,   7},
+        {Token::Div,   7},
+
+        {Token::LP,    8},
 };
 
 std::ostream &operator<<(std::ostream &os, const Token &token) {

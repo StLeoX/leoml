@@ -227,9 +227,15 @@ Expb *Parser::ParseExpb() {
 Exp *Parser::ParseExp() {
     auto peek2 = _ts.PeekNext(); //* Next() will influent the PeekNext(), so get peek2 first.
     auto peek = _ts.Next(); //* Use Next to get the peek.
-    if (peek->IsEOF()) CompileError(peek, "premature end of input");
     auto ret = Exp::New(peek);
-    if (peek->tag == Token::Var && !peek2->IsBinary()) {
+    if (peek->IsEOF()) CompileError(peek, "premature end of input");
+        // exp ::= funcCall
+    else if (peek->tag == Token::Var && peek2->tag == '(') {
+        _ts.PutBack();
+        return ParseFuncCall(peek);
+    }
+        // exp ::= var expblist
+    else if (peek->tag == Token::Var && !peek2->IsBinary()) {
         ret->var = ParseVar(peek);
         auto expb = ParseExpb();
         while (expb != nullptr) { // not nullptr
@@ -237,34 +243,73 @@ Exp *Parser::ParseExp() {
             expb = ParseExpb();
         }
         _ts.PutBack();
-    } else {
+        return ret;
+    }
+        // exp ::= expb
+    else {
         _ts.PutBack();
         ret->expbList->push_back(ParseExpb());
+        return ret;
     }
+    return nullptr;
+}
+
+Func *Parser::ParseFunc(const Token *token) {
+    auto ret = Func::New();
+    ret->name = ParseVar(_ts.Next());
+    if (_ts.Test('(')) {
+        _ts.Next();
+        do {
+            ret->argList->push_back(ParseVar(_ts.Next()));
+        } while (_ts.Try(Token::Comma));
+        _ts.Expect(')');
+    }
+    return ret;
+}
+
+FuncCall *Parser::ParseFuncCall(const Token *token) {
+    auto ret = FuncCall::New();
+    ret->name = ParseVar(_ts.Next());
+    if (_ts.Test('(')) {
+        _ts.Next();
+        do {
+            ret->argList->push_back(ParseVar(_ts.Next()));
+        } while (_ts.Try(Token::Comma));
+        _ts.Expect(')');
+    }
+    ret->retValue = nullptr; // Unknown retValue before evaluating.
     return ret;
 }
 
 Decl *Parser::ParseDecl() {
     auto peek = _ts.Next();
     auto ret = Decl::New();
-    // let... kind
+    // let... decl kind
     if (peek->tag == Token::Let) {
-        ret->varList->push_back(ParseVar(_ts.Next()));
-        if (_ts.Test('(')) {
-            _ts.Next();
-            do {
-                ret->varList->push_back(ParseVar(_ts.Next()));
-            } while (_ts.Try(Token::Comma));
-            _ts.Expect(')');
+        auto peek3 = _ts.PeekNext();
+        // assign decl kind
+        if (peek3->tag == '=') {
+            ret->kind = Decl::AssignDecl;
+            ret->var = ParseVar(_ts.Next());
+            _ts.Expect('=');
+            ret->exp = ParseExp();
+            _ts.Expect(Token::Dsemi);
+            return ret;
+        } // func decl kind
+        else {
+            ret->kind = Decl::FuncDecl;
+            auto funcDecl = ParseFunc(peek);
+            _ts.Expect('=');
+            funcDecl->body = ParseExp();
+            _ts.Expect(Token::Dsemi);
+            ret->func = funcDecl;
+            return ret;
         }
-        _ts.Expect('=');
-        ret->exp = ParseExp();
-        _ts.Expect(Token::Dsemi);
-        return ret;
     }
-        // var kind
+        // var decl kind
     else if (peek->tag == Token::Var) {
-        ret->varList->push_back(ParseVar(peek));
+        ret->kind = Decl::VarDecl;
+        ret->var = ParseVar(peek);
         _ts.Expect(Token::Dsemi);
         return ret;
     } else {

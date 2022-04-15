@@ -77,7 +77,9 @@ public:
         Le,// "<="
         Ge,// ">="
         Eq,// "=="
-        Ne,// "!="
+        Ne,// "<>"
+        An,// "&&"
+        Or,// "||"
 
         // Keywords
         Let = 140,// "let"
@@ -92,10 +94,7 @@ public:
         Fst,// "fst"
         Snd,// "snd"
         Cons,// "(, )"
-
-        // Keywords_todo
-        // Rec,
-        // Fun,
+        Rec,// "rec"
 
         // data type enum
         Var = 180,

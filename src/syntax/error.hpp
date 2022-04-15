@@ -1,10 +1,7 @@
 #ifndef LEOML_ERROR_H
 #define LEOML_ERROR_H
 
-#include <cstdint>
-#include <iostream>
-#include <string>
-#include <utility>
+#include <cstdio>
 #include "Token.h"
 
 #define ANSI_COLOR_RED     "\x1b[31m"
@@ -13,11 +10,12 @@
 #define ANSI_COLOR_RESET   "\x1b[0m"
 
 
-inline void CompilePanic(std::string msg) {
+inline void CompilePanic(const char *msg) {
     fprintf(stderr,
             ANSI_COLOR_RED
             "\n===Compile Panic===\n"
             ANSI_COLOR_RESET);
+    fprintf(stderr, msg);
     std::abort();
 }
 
