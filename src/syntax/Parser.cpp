@@ -87,13 +87,13 @@ ExpaLet *Parser::ParseExpaLet(const Token *token) {
     return ret;
 }
 
-Expa *Parser::ParseExpaParen(const Token *token) {
-    auto exp = Parser::ParseExp();
+Expb *Parser::ParseExpaParen(const Token *token) {
+    auto exp = Parser::ParseExpb();
     _ts.Expect(Token::RP);
-    return Expa::New(exp);
+    return exp;
 }
 
-Expa *Parser::ParseExpa() {
+Expb *Parser::ParseExpa() {
     auto peek = _ts.Next();
     if (peek->IsEOF()) CompileError(peek, "premature end of input");
     switch (peek->tag) {
@@ -111,7 +111,7 @@ Expa *Parser::ParseExpa() {
             return ParseExpaWhile(peek);
         case Token::Let:
             return ParseExpaLet(peek);
-        case Token::LP:
+        case Token::LP:  // the only expb return type
             return ParseExpaParen(peek);
         default:
             return nullptr;
@@ -182,7 +182,7 @@ ExpbCompound *Parser::ParseExpbCompound(const Token *token) {
     auto first = ParseExpa();  // pop first
     _ts.Expect(';');
     auto second = ParseExpb();  // pop second
-    return ExpbCompound::New(token, first, second);
+    return ExpbCompound::New(token, dynamic_cast<Expa *>(first), second);
 }
 
 Expb *Parser::ParseExpb() {
@@ -256,6 +256,7 @@ Exp *Parser::ParseExp() {
 
 Func *Parser::ParseFunc(const Token *token) {
     auto ret = Func::New();
+    _ts.Try(Token::Rec);  // todo: "rec" related operation.
     ret->name = ParseVar(_ts.Next());
     if (_ts.Test('(')) {
         _ts.Next();

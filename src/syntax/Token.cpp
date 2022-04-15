@@ -24,7 +24,6 @@ const std::unordered_map<int, const char *> Token::TagMap{
         {Token::Ge,     ">="},
         {Token::Eq,     "=="},
         {Token::Ne,     "<>"},
-        {Token::Unit,   "()"},
         {Token::An,     "&&"},
         {Token::Or,     "||"},
 

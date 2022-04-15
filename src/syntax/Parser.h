@@ -71,7 +71,7 @@ private:
     ExpbCompound *ParseExpbCompound(const Token *token);
 
     /// Parse Expa
-    Expa *ParseExpa();
+    Expb *ParseExpa();
 
     /// Parse Ident
     Var *ParseVar(const Token *token);
@@ -89,7 +89,7 @@ private:
     ExpaLet *ParseExpaLet(const Token *token);
 
     /// Parse ExpaParen
-    Expa *ParseExpaParen(const Token *token);
+    Expb *ParseExpaParen(const Token *token);
 };
 
 
