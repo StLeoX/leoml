@@ -18,26 +18,26 @@ int ntab = 0;
 void Program::Serialize(std::ostream &os) {
     os << "+ program";
     INC;
-    for (auto decl:*declList) {
+    for (auto stmt:*stmtList) {
         LT;
-        decl->Serialize(os);
+        stmt->Serialize(os);
     }
     DEC;
 }
 
-void Decl::Serialize(std::ostream &os) {
+void Stmt::Serialize(std::ostream &os) {
     switch (kind) {
-        case FuncDecl:
+        case FuncAssignStmt:
             func->Serialize(os);
             break;
-        case VarDecl:
-            os << "+ var decl";
+        case VarStmt:
+            os << "+ var single";
             ILT;
             var->Serialize(os);
             DEC;
             break;
-        case AssignDecl:
-            os << "+ assign decl";
+        case VarAssignStmt:
+            os << "+ var define";
             ILT;
             os << "+ left value";
             ILT;
@@ -55,14 +55,13 @@ void Decl::Serialize(std::ostream &os) {
     }
 }
 
-Decl::~Decl() {
+Stmt::~Stmt() {
     delete var, func;
 }
 
 void Exp::Serialize(std::ostream &os) {
     if (var != nullptr) {
         var->Serialize(os);
-        LT;
     }
     if (expbList == nullptr || expbList->empty()) {}
     else if (expbList->size() == 1) {
@@ -79,12 +78,12 @@ void Exp::Serialize(std::ostream &os) {
 }
 
 void Func::Serialize(std::ostream &os) {
-    os << "+ func decl";
-    os << "  name:  " << name->GetStr();
+    os << "+ func define";
+    os << "  name:  " << name;
     ILT;
-    os << "+ arg list";
+    os << "+ param list";
     INC;
-    for (auto var:*argList) {
+    for (auto var:*paramList) {
         LT;
         var->Serialize(os);
     }
@@ -101,22 +100,22 @@ void Func::Serialize(std::ostream &os) {
 
 void FuncCall::Serialize(std::ostream &os) {
     os << "+ func call";
-    os << "  name:  " << name->GetStr();
+    os << "  name:  " << name;
     ILT;
-    os << "+ arg list";
-    INC;
-    for (auto var:*argList) {
-        LT;
-        var->Serialize(os);
+    if (argList != nullptr) {
+        os << "+ arg list";
+        INC;
+        for (auto expb:*argList) {
+            LT;
+            expb->Serialize(os);
+        }
+        DEC;
     }
-    DEC;
     if (body != nullptr) {
-        LT;
         os << "+ body";
         body->Serialize(os);
     }
     if (retValue != nullptr) {
-        LT;
         os << "+ retValue";
         retValue->Serialize(os);
     }
@@ -278,7 +277,7 @@ void ExpaWhile::Serialize(std::ostream &os) {
     LT;
     _cond->Serialize(os);
     LT;
-    os << "+ body expr";
+    os << "+ body";
     LT;
     _body->Serialize(os);
     DEC;
@@ -287,18 +286,21 @@ void ExpaWhile::Serialize(std::ostream &os) {
 void ExpaLet::Serialize(std::ostream &os) {
     os << "+ expaLet";
     ILT;
-    os << "+ var-exp pairs";
+    os << "+ exp pairs";
     INC;
-    for (auto item:*varExpList) {
+    for (auto item:*expPairList) {
         LT;
         item.first->Serialize(os);
-        LT;
-        item.second->Serialize(os);
+        if (item.second != nullptr) {
+            LT;
+            item.second->Serialize(os);
+        }
     }
     DEC;
     LT;
-    os << "+ body expr";
-    LT;
-    _body->Serialize(os);
+    os << "+ body";
+    ILT;
+    body->Serialize(os);
+    DEC;
     DEC;
 }

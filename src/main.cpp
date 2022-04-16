@@ -48,7 +48,7 @@ std::string GetName(const std::string &path) {
 /// \return content
 std::string *LoadFile(const std::string &filepath) {
     FILE *f = fopen(filepath.c_str(), "r");
-    if (!f) CompileError("%s: No such file or directory", filepath.c_str());
+//    if (!f) CompileError("%s: No such file or directory", filepath.c_str());
     auto text = new std::string;
     int c;
     while (EOF != (c = fgetc(f)))
@@ -66,10 +66,10 @@ void Tokenize() {
         Lexer *lexer = Lexer::New(LoadFile(source), &name);
         lexer->Tokenize(ts);
         if (output_dir != "") {
-            auto outpath = std::filesystem::absolute(output_dir + "/" + name + "ts.txt");
+            auto outpath = std::filesystem::absolute(output_dir + "/" + name + ".ts.txt");
             std::ofstream out{outpath};
-            out << ts;// todo
-        } else { std::cout << ts; }
+            ts.Serialize(out);
+        } else { ts.Serialize(std::cout); }
     }
 }
 
@@ -84,10 +84,10 @@ void Parse() {
         Parser *parser = Parser::New(ts);
         parser->Parse();
         if (output_dir != "") {
-            auto outpath = std::filesystem::absolute(output_dir + "/" + name + "ast.txt");
+            auto outpath = std::filesystem::absolute(output_dir + "/" + name + ".ast.txt");
             std::ofstream out{outpath};
-            out << *parser;
-        } else { std::cout << *parser; }
+            parser->Serialize(out);
+        } else { parser->Serialize(std::cout); }
     }
 }
 

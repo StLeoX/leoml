@@ -73,17 +73,22 @@ ExpaWhile *Parser::ParseExpaWhile(const Token *token) {
 }
 
 ExpaLet *Parser::ParseExpaLet(const Token *token) {
-    VarExpList varExpList = {};
+    auto ret = ExpaLet::New(token);
     do {
-        auto var = ParseVar(_ts.Next());
-        _ts.Expect('=');  // "=" required
-        auto exp = ParseExp();
-        varExpList.push_back(std::pair{var, exp});
+        auto assign = ParseAssignStmt(_ts.Peek());
+        switch (assign->kind) {
+            case Stmt::VarAssignStmt:
+                ret->expPairList->push_back(std::pair(assign->var, assign->exp));
+                break;
+            case Stmt::FuncAssignStmt:
+                ret->expPairList->push_back(std::pair(assign->func, static_cast<Exp *>(nullptr)));
+                break;
+            default:
+                CompilePanic("unreachable in ParseExpaLet");
+        }
     } while (_ts.Try(Token::And));  // "and" optional, repeated
     _ts.Expect(Token::In);  // "in" required
-    auto body = ParseExp();
-    auto ret = ExpaLet::New(token, body);
-    *ret->varExpList = varExpList;
+    ret->body = ParseExp();
     return ret;
 }
 
@@ -94,8 +99,14 @@ Expb *Parser::ParseExpaParen(const Token *token) {
 }
 
 Expb *Parser::ParseExpa() {
+    auto peek2 = _ts.PeekNext();
     auto peek = _ts.Next();
     if (peek->IsEOF()) CompileError(peek, "premature end of input");
+    // exp ::= funcCall
+    if (peek->tag == Token::Var && peek2->tag == '(') {
+        _ts.PutBack();
+        return ParseFuncCall(peek);
+    }
     switch (peek->tag) {
         case Token::Var:
             return ParseVar(peek);
@@ -111,7 +122,7 @@ Expb *Parser::ParseExpa() {
             return ParseExpaWhile(peek);
         case Token::Let:
             return ParseExpaLet(peek);
-        case Token::LP:  // the only expb return type
+        case Token::LP:  // return expb
             return ParseExpaParen(peek);
         default:
             return nullptr;
@@ -192,8 +203,12 @@ Expb *Parser::ParseExpb() {
     if (peek->IsEOF()) CompileError(peek, "premature end of input");
         // Second(expbBinary)
         // LeftRecur, but we can use the peek2 :)
-    else if (peek2->IsBinary()) {
+    else if (peek2->IsBinary() || peek2->tag == '(') {
         _ts.PutBack();
+        auto before_expa = _ts.Mark();
+        auto expa_possible = ParseExpa();
+        if (!_ts.Peek()->IsBinary()) { return expa_possible; }
+        _ts.ResetTo(before_expa);
         return ParseExpbBinary(peek);
     }
         // Second(expbCompound)
@@ -229,13 +244,8 @@ Exp *Parser::ParseExp() {
     auto peek = _ts.Next(); //* Use Next to get the peek.
     auto ret = Exp::New(peek);
     if (peek->IsEOF()) CompileError(peek, "premature end of input");
-        // exp ::= funcCall
-    else if (peek->tag == Token::Var && peek2->tag == '(') {
-        _ts.PutBack();
-        return ParseFuncCall(peek);
-    }
         // exp ::= var expblist
-    else if (peek->tag == Token::Var && !peek2->IsBinary()) {
+    else if (peek->tag == Token::Var && !peek2->IsBinary() && peek2->tag != '(') {
         ret->var = ParseVar(peek);
         auto expb = ParseExpb();
         while (expb != nullptr) { // not nullptr
@@ -255,13 +265,13 @@ Exp *Parser::ParseExp() {
 }
 
 Func *Parser::ParseFunc(const Token *token) {
-    auto ret = Func::New();
+    auto ret = Func::New(token);
     _ts.Try(Token::Rec);  // todo: "rec" related operation.
-    ret->name = ParseVar(_ts.Next());
+    ret->name = ParseVar(_ts.Next())->GetStr();
     if (_ts.Test('(')) {
         _ts.Next();
         do {
-            ret->argList->push_back(ParseVar(_ts.Next()));
+            ret->paramList->push_back(ParseVar(_ts.Next()));
         } while (_ts.Try(Token::Comma));
         _ts.Expect(')');
     }
@@ -269,52 +279,58 @@ Func *Parser::ParseFunc(const Token *token) {
 }
 
 FuncCall *Parser::ParseFuncCall(const Token *token) {
-    auto ret = FuncCall::New();
-    ret->name = ParseVar(_ts.Next());
+    auto ret = FuncCall::New(token);
+    ret->name = ParseVar(_ts.Next())->GetStr();
     if (_ts.Test('(')) {
         _ts.Next();
         do {
-            ret->argList->push_back(ParseVar(_ts.Next()));
+            ret->argList->push_back(ParseExpb());
         } while (_ts.Try(Token::Comma));
         _ts.Expect(')');
     }
+    ret->paramList = nullptr;
     ret->retValue = nullptr; // Unknown retValue before evaluating.
     return ret;
 }
 
-Decl *Parser::ParseDecl() {
-    auto peek = _ts.Next();
-    auto ret = Decl::New();
-    // let... decl kind
-    if (peek->tag == Token::Let) {
-        auto peek3 = _ts.PeekNext();
-        // assign decl kind
-        if (peek3->tag == '=') {
-            ret->kind = Decl::AssignDecl;
-            ret->var = ParseVar(_ts.Next());
-            _ts.Expect('=');
-            ret->exp = ParseExp();
-            _ts.Expect(Token::Dsemi);
-            return ret;
-        } // func decl kind
-        else {
-            ret->kind = Decl::FuncDecl;
-            auto funcDecl = ParseFunc(peek);
-            _ts.Expect('=');
-            funcDecl->body = ParseExp();
-            _ts.Expect(Token::Dsemi);
-            ret->func = funcDecl;
-            return ret;
-        }
+Stmt *Parser::ParseAssignStmt(const Token *token) {
+    auto ret = Stmt::New();
+    auto peek3 = _ts.PeekNext();
+    // var assign kind
+    if (peek3->tag == '=') {
+        ret->kind = Stmt::VarAssignStmt;
+        ret->var = ParseVar(_ts.Next());
+        _ts.Expect('=');
+        ret->exp = ParseExp();
+        return ret;
+    } // func assign kind
+    else {
+        ret->kind = Stmt::FuncAssignStmt;
+        auto funcStmt = ParseFunc(token);
+        _ts.Expect('=');
+        funcStmt->body = ParseExp();
+        ret->func = funcStmt;
+        return ret;
     }
-        // var decl kind
+}
+
+Stmt *Parser::ParseStmt() {
+    auto peek = _ts.Next();
+    // let... stmt kind
+    if (peek->tag == Token::Let) {
+        auto ret = ParseAssignStmt(peek);
+        _ts.Expect(Token::Dsemi);
+        return ret;
+    }
+        // var stmt kind
     else if (peek->tag == Token::Var) {
-        ret->kind = Decl::VarDecl;
+        auto ret = Stmt::New();
+        ret->kind = Stmt::VarStmt;
         ret->var = ParseVar(peek);
         _ts.Expect(Token::Dsemi);
         return ret;
     } else {
-        CompileError(peek, "unexpected decl start");
+        CompileError(peek, "unexpected stmt start");
         return nullptr;
     }
     CompileError(peek, "unreachable");
@@ -324,12 +340,11 @@ Decl *Parser::ParseDecl() {
 Program *Parser::ParseProgram() {
     auto ret = Program::New();
     while (!_ts.Peek()->IsEOF()) {
-        ret->declList->push_back(ParseDecl());
+        ret->stmtList->push_back(ParseStmt());
     }
     return ret;
 }
 
-std::ostream &operator<<(std::ostream &os, const Parser &parser) {
-    parser._program->Serialize(os);
-    return os;
+void Parser::Serialize(std::ostream &os) {
+    _program->Serialize(os);
 }

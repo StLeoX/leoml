@@ -169,9 +169,8 @@ public:
     bool IsUnary() const { return tag == '+' || tag == '-'; }
 
     bool IsBinary() const {
-        return tag == '+' || tag == '-' || tag == '*' || tag == '/' || tag == '<' || tag == '>' || tag == Le ||
-               tag == Eq ||
-               tag == Ne || tag == Ge || tag == Cons;
+        return tag == '+' || tag == '-' || tag == '*' || tag == '/' || tag == '<' || tag == '>' ||
+               tag == Le || tag == Eq || tag == Ne || tag == Ge || tag == Cons || tag == An || tag == Or;
     }
 
     friend std::ostream &operator<<(std::ostream &os, const Token &token);
@@ -358,7 +357,7 @@ public:
 
     void SetParser(Parser *parser) { _parser = parser; }
 
-    friend std::ostream &operator<<(std::ostream &os, TokenSequence &sequence);
+    void Serialize(std::ostream &os);
 
 private:
     TokenList::iterator GetInsertFrontPos() {

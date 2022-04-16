@@ -29,15 +29,18 @@ public:
         _program = ParseProgram();
     }
 
-    friend std::ostream &operator<<(std::ostream &os, const Parser &parser);
+    void Serialize(std::ostream &os);
 
     Program *ParseProgram();
 
 private:
-    /// Parse Decl
-    Decl *ParseDecl();
+    /// Parse Stmt
+    Stmt *ParseStmt();
 
-    /// Parse FuncDecl
+    /// Parse Assign Stmt
+    Stmt *ParseAssignStmt(const Token *token);
+
+    /// Parse FuncStmt
     Func *ParseFunc(const Token *token);
 
     /// Parse FuncCall

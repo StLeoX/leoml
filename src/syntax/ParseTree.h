@@ -9,6 +9,7 @@
 #define LEOML_PARSETREE_H
 
 #include <list>
+#include <unordered_map>
 #include <iostream>
 #include <ostream>
 #include "Token.h"
@@ -34,9 +35,9 @@ public:
 };
 
 /// Language Hierarchy Model
-class Decl;  // Decl
+class Stmt;  // Stmt
 
-using DeclList = std::list<Decl *>; // DeclList
+using StmtList = std::list<Stmt *>; // StmtList
 
 class Func;  // Func
 
@@ -47,8 +48,6 @@ class Var;
 using VarList = std::list<Var *>; // Varlist
 
 class Exp; // Exp
-
-using VarExpList = std::list<std::pair<Var *, Exp *>>;
 
 class Expb; //Expb
 
@@ -61,6 +60,8 @@ class ExpbUnary;
 class ExpbCompound;
 
 class Expa; //Expa
+
+using ExpPairList = std::list<std::pair<Expa *, Exp *>>;
 
 class ExpaIf;
 
@@ -75,12 +76,12 @@ class Program : public ParseTreeNode {
     class TreeVisitor;
 
 private:
-    Program() : declList(new DeclList) {};
+    Program() : stmtList(new StmtList) {};
 
 public:
-    DeclList *declList;
+    StmtList *stmtList;
 
-    virtual ~Program() { delete declList; };
+    virtual ~Program() { delete stmtList; };
 
     static Program *New() {
         return new Program();
@@ -90,23 +91,23 @@ public:
 
 };
 
-/// Decl
+/// Stmt
 /*
- * decl ::= let funcDecl = exp ;;  # varlist optional
+ * stmt ::= let funcStmt = exp ;;  # varlist optional
  *        | var;;
- * As the top NoTerminal, decl works like an union.
- * But for concept, decl is more like stmt.
+ * As the top NoTerminal, stmt works like an union.
+ * stmt's old-name is decl.
  * */
-class Decl : public ParseTreeNode {
+class Stmt : public ParseTreeNode {
     template<typename T> friend
     class TreeVisitor;
 
 public:
-    // decl enum
+    // stmt enum
     enum {
-        VarDecl = 0,
-        FuncDecl,
-        AssignDecl,
+        VarStmt = 0,
+        FuncAssignStmt,
+        VarAssignStmt,
     };
 
     Var *var;
@@ -114,9 +115,9 @@ public:
     Exp *exp;
     int kind;
 
-    virtual ~Decl();
+    virtual ~Stmt();
 
-    static Decl *New() { return new Decl(); }
+    static Stmt *New() { return new Stmt(); }
 
     virtual void Serialize(std::ostream &os);
 
@@ -151,54 +152,6 @@ public:
     virtual ~Exp() { delete _root, var, expbList; };
 
     static Exp *New(const Token *token) { return new Exp(token); }
-
-    virtual void Serialize(std::ostream &os);
-
-};
-
-/// Func
-/*
- * func ::= var [( varlist )]?  # varlist optional
- * func alias funcDecl
- * */
-class Func : public ParseTreeNode {
-    template<typename T> friend
-    class TreeVisitor;
-
-protected:
-    Func() : argList(new VarList) {}
-
-public:
-    Var *name;
-    Exp *body;
-    VarList *argList;
-
-    virtual ~Func() { delete body, argList; }
-
-    static Func *New() { return new Func(); }
-
-    virtual void Serialize(std::ostream &os);
-
-};
-
-/// FuncCall
-/*
- * funcCall extends funcDecl:
- *     funcCall has the return value as Exp*
- * */
-class FuncCall : public Func, public Exp {
-    template<typename T> friend
-    class TreeVisitor;
-
-private:
-    FuncCall() {}
-
-public:
-    Exp *retValue;
-
-    ~FuncCall() { delete retValue; }
-
-    static FuncCall *New() { return new FuncCall(); }
 
     virtual void Serialize(std::ostream &os);
 
@@ -416,7 +369,7 @@ public:
 
 };
 
-/// Var
+/// Expa Var
 class Var : public Expa {
     template<typename T> friend
     class TreeVisitor;
@@ -430,6 +383,55 @@ public:
     static Var *New(const Token *token) { return new Var(token); }
 
     std::string GetStr() { return _root->str; }
+
+    virtual void Serialize(std::ostream &os);
+
+};
+
+/// Func
+/*
+ * func ::= var [( varlist )]?  # varlist optional
+ * func alias funcStmt
+ * */
+class Func : public Expa {
+    template<typename T> friend
+    class TreeVisitor;
+
+protected:
+    Func(const Token *token) : Expa(token), paramList(new VarList) {}
+
+public:
+    std::string name;
+    Exp *body;
+    VarList *paramList;
+
+    virtual ~Func() { delete body, paramList; }
+
+    static Func *New(const Token *token) { return new Func(token); }
+
+    virtual void Serialize(std::ostream &os);
+
+};
+
+/// FuncCall
+/*
+ * funcCall extends funcStmt and expa:
+ *     funcCall has the return value as Exp*
+ * */
+class FuncCall : public Func {
+    template<typename T> friend
+    class TreeVisitor;
+
+private:
+    FuncCall(const Token *token) : Func(token), argList(new ExpbList) {}
+
+public:
+    Exp *retValue;
+    ExpbList *argList;
+
+    ~FuncCall() { delete retValue, argList; }
+
+    static FuncCall *New(const Token *token) { return new FuncCall(token); }
 
     virtual void Serialize(std::ostream &os);
 
@@ -546,17 +548,16 @@ class ExpaLet : public Expa {
     class TreeVisitor;
 
 private :
-    Exp *_body;
-
-    ExpaLet(const Token *token, Exp *body) : Expa(token), _body(body), varExpList(new VarExpList) {}
+    ExpaLet(const Token *token) : Expa(token), expPairList(new ExpPairList) {}
 
 public:
-    VarExpList *varExpList;
+    Exp *body;
+    ExpPairList *expPairList;
 
-    ~ExpaLet() { delete _body, varExpList; }
+    ~ExpaLet() { delete body, expPairList; }
 
-    static ExpaLet *New(const Token *token, Exp *body) {
-        return new ExpaLet(token, body);
+    static ExpaLet *New(const Token *token) {
+        return new ExpaLet(token);
     }
 
     virtual void Serialize(std::ostream &os);

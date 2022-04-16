@@ -144,11 +144,8 @@ const Token *TokenSequence::Expect(int expect) {
     return token;
 }
 
-std::ostream &operator<<(std::ostream &os, TokenSequence &sequence) {
-    while (!sequence.Empty()) {
-        os << *(sequence.Next()) << std::endl;
+void TokenSequence::Serialize(std::ostream &os) {
+    while (!Empty()) {
+        os << *(Next()) << std::endl;
     };
-    return os;
 }
-
-
