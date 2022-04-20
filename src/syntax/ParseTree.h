@@ -12,7 +12,10 @@
 #include <unordered_map>
 #include <iostream>
 #include <ostream>
+
 #include "Token.h"
+#include "Scope.h"
+#include "Type.h"
 
 class Visitor;
 
@@ -139,21 +142,30 @@ class Exp : public ParseTreeNode {
     friend class Expa;
 
 protected:
-    Exp() {}
-
     const Token *_root;
+    Type *_type;
 
-    Exp(const Token *token) : _root(token), expbList(new ExpbList) {};
+    Exp(const Token *token) : _root(token), _type(Type::New(Type::T_Unknown)), expbList(new ExpbList) {};
 
 public:
     Var *var;
     ExpbList *expbList;
 
-    virtual ~Exp() { delete _root, var, expbList; };
+    virtual ~Exp() { delete _root, _type, var, expbList; };
 
     static Exp *New(const Token *token) { return new Exp(token); }
 
     virtual void Serialize(std::ostream &os);
+
+    virtual void TypeCheck() {};
+
+    const Token *GetRoot() const { return _root; };
+
+    Type *GetType() const { return _type; }
+
+    void SetType(Type *type) { *_type = *type; }
+
+    void SetType(int kind) { _type->kind = kind; }
 
 };
 
@@ -184,6 +196,8 @@ public:
 
     // Expb should not be directly serilizated.
 //    virtual void Serialize(std::ostream &os);
+
+    virtual void TypeCheck() {};
 
 };
 
@@ -218,6 +232,39 @@ public:
 
     virtual void Serialize(std::ostream &os);
 
+    /*
+     * match(op) => AdditiveOpTypeCheck/EqualityOpTypeCheck
+     * */
+    virtual void TypeCheck();
+
+    /*
+     * op: +, -, *, /
+     * check rule:
+     *     type(lhs) == type(rhs) == T_Int/T_Float
+     * infer rule:
+     *     _type = T_Int/T_Float
+     * */
+    void AdditiveOpTypeCheck();
+
+    /*
+     * op: <, >, <=, >=, ==, !=
+     * check rule:
+     *     type(lhs) == type(rhs) == T_Int/T_Float/T_Bool
+     *     true > false
+     * infer rule:
+     *     _type = T_Bool
+     * */
+    void EqualityOpTypeCheck();
+
+    /*
+     * op: ||, &&
+     * check rule:
+     *     type(lhs) == type(rhs) == T_Bool
+     * infer rule:
+     *     _type = T_Bool
+     * */
+    void BooleanOpTypeCheck();
+
 };
 
 /// Expb Unary
@@ -244,6 +291,14 @@ public:
     static ExpbUnary *New(const Token *token, int op, Expb *oprand) { return new ExpbUnary(token, op, oprand); };
 
     virtual void Serialize(std::ostream &os);
+
+    /*
+     * check rule:
+     *     type(oprand) == T_Int/T_Float
+     * infer rule:
+     *     _type = T_Int/T_Float
+     * */
+    virtual void TypeCheck();
 
 };
 
@@ -318,7 +373,7 @@ public:
 
 };
 
-/// ExpbSnd
+/// Expb Snd
 /*
  * expb ::= snd ( expa, expb )
  * */
@@ -374,15 +429,17 @@ class Var : public Expa {
     template<typename T> friend
     class TreeVisitor;
 
-private:
-    Var(const Token *token) : Expa(token) {}
+protected:
+    Var(const Token *token) : Expa(token) { name = token->str; }
 
 public:
+    std::string name;
+
     ~Var() { delete _root; };
 
     static Var *New(const Token *token) { return new Var(token); }
 
-    std::string GetStr() { return _root->str; }
+    void SetTok(const Token *token) { _root = token; }
 
     virtual void Serialize(std::ostream &os);
 
@@ -391,19 +448,19 @@ public:
 /// Func
 /*
  * func ::= var [( varlist )]?  # varlist optional
- * func alias funcStmt
+ * func alias funcStmt, func extends var for scope.
  * */
-class Func : public Expa {
+class Func : public Var {
     template<typename T> friend
     class TreeVisitor;
 
 protected:
-    Func(const Token *token) : Expa(token), paramList(new VarList) {}
+    Func(const Token *token) : Var(token), paramList(new VarList), fun(nullptr) {}
 
 public:
-    std::string name;
     Exp *body;
     VarList *paramList;
+    TFunc *fun;
 
     virtual ~Func() { delete body, paramList; }
 
@@ -411,6 +468,14 @@ public:
 
     virtual void Serialize(std::ostream &os);
 
+    /*
+     * check rule:
+     *     None
+     * infer rule:
+     *     _type = T_Func
+     *     fun.retType = type(body)
+     * */
+    virtual void TypeCheck();
 };
 
 /// FuncCall
@@ -435,6 +500,11 @@ public:
 
     virtual void Serialize(std::ostream &os);
 
+    /*
+     * check rule:
+     *     TypeCheck(arg) for arg in argList, scope needed.
+     * */
+    virtual void TypeCheck();
 };
 
 /// Expa Constant
@@ -454,23 +524,28 @@ private:
     std::string _sval{};
 
     ExpaConstant(const Token *token) : Expa(token) {
-        assert(Token::Unit == token->tag);
+        assert(token->tag == Token::Unit);
+        _type->kind = Type::T_Unit;
     }
 
     ExpaConstant(const Token *token, int val) : Expa(token), _ival(val) {
-        assert(Token::Int == token->tag);
+        assert(token->tag == Token::Int);
+        _type->kind = Type::T_Int;
     }
 
     ExpaConstant(const Token *token, float val) : Expa(token), _fval(val) {
-        assert(Token::Float == token->tag);
+        assert(token->tag == Token::Float);
+        _type->kind = Type::T_Float;
     }
 
     ExpaConstant(const Token *token, bool bval) : Expa(token), _bval(bval) {
-        assert(Token::Bool == token->tag);
+        assert(token->tag == Token::Bool);
+        _type->kind = Type::T_Bool;
     }
 
     ExpaConstant(const Token *token, const std::string &val) : Expa(token), _sval(val) {
-        assert(Token::String == token->tag);
+        assert(token->tag == Token::String);
+        _type->kind = Type::T_Unknown;
     }
 
 public:
@@ -490,7 +565,7 @@ public:
 
 };
 
-/// Expa if
+/// Expa If
 /*
  * expaIf ::= if exp then exp [else exp]
  * */
@@ -514,9 +589,18 @@ public:
 
     virtual void Serialize(std::ostream &os);
 
+    /*
+     * check rule:
+     *     type(cond) == T_Bool
+     *     type(then) [== type(els)] == T_Int/T_Float/T_Bool
+     * infer rule:
+     *     _type = type(then)
+     * */
+    virtual void TypeCheck();
+
 };
 
-/// Expa while
+/// Expa While
 /*
  * expaWhile ::= while exp do exp done
 * */
@@ -537,9 +621,18 @@ public:
 
     virtual void Serialize(std::ostream &os);
 
+    /*
+     * check rule:
+     *     type(cond) == T_Bool
+     *     type(body) == T_Unit
+     * infer rule:
+     *     _type = T_Unit
+     * */
+    virtual void TypeCheck();
+
 };
 
-/// Expa let
+/// Expa Let
 /*
  * expaLet ::= let var = exp [and var = exp]* in exp
  * */
@@ -562,6 +655,13 @@ public:
 
     virtual void Serialize(std::ostream &os);
 
+    /*
+     * check rule:
+     *     TypeCheck(pair) for pair in expPairList
+     * infer rule:
+     *     _type = type(body)
+     * */
+    virtual void TypeCheck();
 };
 
 

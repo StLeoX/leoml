@@ -11,6 +11,10 @@
 #include "syntax/Parser.cpp"
 #include "syntax/ParseTree.h"
 #include "syntax/ParseTree.cpp"
+#include "syntax/Scope.h"
+#include "syntax/Scope.cpp"
+#include "syntax/Type.h"
+#include "syntax/Type.cpp"
 
 std::string source_path = "";
 std::string output_dir = "";  // "." for example
@@ -62,14 +66,15 @@ void Tokenize() {
     printf("tokenizing\n");
     for (auto source:source_list) {
         auto name = GetName(source);
-        TokenSequence ts = TokenSequence();
+        TokenSequence *ts = new TokenSequence();
         Lexer *lexer = Lexer::New(LoadFile(source), &name);
-        lexer->Tokenize(ts);
+        lexer->Tokenize(*ts);
         if (output_dir != "") {
             auto outpath = std::filesystem::absolute(output_dir + "/" + name + ".ts.txt");
             std::ofstream out{outpath};
-            ts.Serialize(out);
-        } else { ts.Serialize(std::cout); }
+            ts->Serialize(out);
+        } else { ts->Serialize(std::cout); }
+        delete ts, lexer;
     }
 }
 
@@ -78,16 +83,17 @@ void Parse() {
     printf("parsing\n");
     for (auto source:source_list) {
         auto name = GetName(source);
-        TokenSequence ts = TokenSequence();
+        TokenSequence *ts = new TokenSequence();
         Lexer *lexer = Lexer::New(LoadFile(source), &name);
-        lexer->Tokenize(ts);
-        Parser *parser = Parser::New(ts);
+        lexer->Tokenize(*ts);
+        Parser *parser = Parser::New(*ts);
         parser->Parse();
         if (output_dir != "") {
             auto outpath = std::filesystem::absolute(output_dir + "/" + name + ".ast.txt");
             std::ofstream out{outpath};
             parser->Serialize(out);
         } else { parser->Serialize(std::cout); }
+        delete ts, parser;
     }
 }
 

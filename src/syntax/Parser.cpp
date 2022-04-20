@@ -134,7 +134,9 @@ Expb *Parser::ParseExpa() {
 ExpbBinary *Parser::ParseExpbBinary(const Token *token) {
     auto lhs = ParseExpa();  // pop lhs
     auto rhs = ParseExpbBinaryRHS(0, lhs);  // parse rhs
-    return dynamic_cast<ExpbBinary *>(rhs);  // casting
+    auto ret = dynamic_cast<ExpbBinary *>(rhs);  // casting
+    ret->TypeCheck();
+    return ret;
 }
 
 Expb *Parser::ParseExpbBinaryRHS(int prec, Expb *lhs) {
@@ -160,7 +162,9 @@ Expb *Parser::ParseExpbBinaryRHS(int prec, Expb *lhs) {
 
 ExpbUnary *Parser::ParseExpbUnary(const Token *token) {
     auto oprand = ParseExpb();  // pop oprand
-    return ExpbUnary::New(token, oprand);
+    auto ret = ExpbUnary::New(token, oprand);
+    ret->TypeCheck();
+    return ret;
 }
 
 ExpbCons *Parser::ParseExpbCons(const Token *token) {
@@ -267,7 +271,7 @@ Exp *Parser::ParseExp() {
 Func *Parser::ParseFunc(const Token *token) {
     auto ret = Func::New(token);
     _ts.Try(Token::Rec);  // todo: "rec" related operation.
-    ret->name = ParseVar(_ts.Next())->GetStr();
+    ret->name = ParseVar(_ts.Next())->name;
     if (_ts.Test('(')) {
         _ts.Next();
         do {
@@ -280,7 +284,7 @@ Func *Parser::ParseFunc(const Token *token) {
 
 FuncCall *Parser::ParseFuncCall(const Token *token) {
     auto ret = FuncCall::New(token);
-    ret->name = ParseVar(_ts.Next())->GetStr();
+    ret->name = ParseVar(_ts.Next())->name;
     if (_ts.Test('(')) {
         _ts.Next();
         do {

@@ -67,6 +67,7 @@ void Exp::Serialize(std::ostream &os) {
     else if (expbList->size() == 1) {
         expbList->front()->Serialize(os);
     } else {
+        LT;
         os << "+ expb list";
         INC;
         for (auto expb:*expbList) {
@@ -98,6 +99,11 @@ void Func::Serialize(std::ostream &os) {
     DEC;
 }
 
+void Func::TypeCheck() {
+
+
+}
+
 void FuncCall::Serialize(std::ostream &os) {
     os << "+ func call";
     os << "  name:  " << name;
@@ -122,8 +128,18 @@ void FuncCall::Serialize(std::ostream &os) {
     DEC;
 }
 
+void FuncCall::TypeCheck() {
+    // find FuncDecl in the scope.
+    // todo: notice "rec" for special scope.
+    Func *fund;
+    fun->retType->Expect(fund->GetType()->kind, _root);
+
+
+}
+
 void ExpbBinary::Serialize(std::ostream &os) {
     os << "+ expbBinary";
+    os << "  type: " << Type::KindLookup(_type->kind);
     ILT;
     os << "| op  " << Token::TagLookup(_op);
     LT;
@@ -143,6 +159,78 @@ ExpbBinary::~ExpbBinary() {
     delete _lhs, _rhs;
 }
 
+void ExpbBinary::AdditiveOpTypeCheck() {
+    auto ltype = _lhs->GetType();
+    auto rtype = _rhs->GetType();
+    switch (ltype->kind) {
+        case Type::T_Int:
+            rtype->Expect(Type::T_Int, _rhs->GetRoot());
+            _type->kind = Type::T_Int;
+            break;
+        case Type::T_Float:
+            rtype->Expect(Type::T_Float, _rhs->GetRoot());
+            _type->kind = Type::T_Float;
+            break;
+        default:
+            Type::UnExpect(ltype->kind, _lhs->GetRoot());
+            break;
+    }
+}
+
+void ExpbBinary::EqualityOpTypeCheck() {
+    auto ltype = _lhs->GetType();
+    auto rtype = _rhs->GetType();
+    _type->kind = Type::T_Bool;
+    switch (ltype->kind) {
+        case Type::T_Int:
+            rtype->Expect(Type::T_Int, _rhs->GetRoot());
+            break;
+        case Type::T_Float:
+            rtype->Expect(Type::T_Float, _rhs->GetRoot());
+            break;
+        case Type::T_Bool:
+            rtype->Expect(Type::T_Bool, _rhs->GetRoot());
+            break;
+        default:
+            Type::UnExpect(ltype->kind, _lhs->GetRoot());
+            break;
+    }
+}
+
+void ExpbBinary::BooleanOpTypeCheck() {
+    auto ltype = _lhs->GetType();
+    auto rtype = _rhs->GetType();
+    _type->kind = Type::T_Bool;
+    ltype->Expect(Type::T_Bool, _lhs->GetRoot());
+    rtype->Expect(Type::T_Bool, _rhs->GetRoot());
+}
+
+void ExpbBinary::TypeCheck() {
+    switch (_op) {
+        case '+':
+        case '-':
+        case '*':
+        case '/':
+            AdditiveOpTypeCheck();
+            break;
+        case '<':
+        case '>':
+        case Token::Ge:
+        case Token::Le:
+        case Token::Eq:
+        case Token::Ne:
+            EqualityOpTypeCheck();
+            break;
+        case Token::An:
+        case Token::Or:
+            BooleanOpTypeCheck();
+            break;
+        default:
+            CompilePanic("unreachable");
+            break;
+    }
+}
+
 void ExpbUnary::Serialize(std::ostream &os) {
     os << "+ expbUnary";
     ILT;
@@ -153,6 +241,28 @@ void ExpbUnary::Serialize(std::ostream &os) {
     _oprand->Serialize(os);
     DEC;
     DEC;
+}
+
+void ExpbUnary::TypeCheck() {
+    switch (_op) {
+        case '+':
+        case '-':
+            switch (_oprand->GetType()->kind) {
+                case Type::T_Int:
+                    _type->kind = Type::T_Int;
+                    break;
+                case Type::T_Float:
+                    _type->kind = Type::T_Float;
+                    break;
+                default:
+                    Type::UnExpect(_oprand->GetType()->kind, _oprand->GetRoot());
+                    break;
+            }
+            break;
+        default:
+            CompilePanic("unreachable");
+            break;
+    }
 }
 
 void ExpbCons::Serialize(std::ostream &os) {
@@ -224,11 +334,13 @@ void ExpbSnd::Serialize(std::ostream &os) {
 ExpbSnd::~ExpbSnd() { delete _first, _second; }
 
 void Var::Serialize(std::ostream &os) {
-    os << "| var  ident: " << _root->str;
+    os << "| var";
+    os << "  type: " << _type->GetName();
+    os << "  ident: " << name;
 }
 
 void ExpaConstant::Serialize(std::ostream &os) {
-    os << "| expaConstant  type: " << Token::TagLookup(_root->tag) << "  value:  ";
+    os << "| expaConstant  type: " << _type->GetName() << "  value:  ";
     switch (_root->tag) {
         case Token::Int:
             os << _ival;
@@ -270,6 +382,11 @@ void ExpaIf::Serialize(std::ostream &os) {
     DEC;
 }
 
+void ExpaIf::TypeCheck() {
+    _cond->GetType()->Expect(Type::T_Bool, _root);
+
+}
+
 void ExpaWhile::Serialize(std::ostream &os) {
     os << "+ expaWhile";
     ILT;
@@ -281,6 +398,11 @@ void ExpaWhile::Serialize(std::ostream &os) {
     LT;
     _body->Serialize(os);
     DEC;
+}
+
+void ExpaWhile::TypeCheck() {
+
+
 }
 
 void ExpaLet::Serialize(std::ostream &os) {
@@ -303,4 +425,9 @@ void ExpaLet::Serialize(std::ostream &os) {
     body->Serialize(os);
     DEC;
     DEC;
+}
+
+void ExpaLet::TypeCheck() {
+
+
 }

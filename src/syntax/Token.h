@@ -170,7 +170,8 @@ public:
 
     bool IsBinary() const {
         return tag == '+' || tag == '-' || tag == '*' || tag == '/' || tag == '<' || tag == '>' ||
-               tag == Le || tag == Eq || tag == Ne || tag == Ge || tag == Cons || tag == An || tag == Or;
+               tag == Le || tag == Eq || tag == Ne || tag == Ge || tag == An || tag == Or ||
+               tag == Cons || tag == Fst || tag == Snd;
     }
 
     friend std::ostream &operator<<(std::ostream &os, const Token &token);
@@ -209,7 +210,7 @@ public:
                   TokenList::iterator end)
             : tokenList(tokenList), _begin(begin), _end(end) {}
 
-    ~TokenSequence() {}
+    ~TokenSequence() { delete tokenList; }
 
     TokenSequence(const TokenSequence &other) { *this = other; }
 

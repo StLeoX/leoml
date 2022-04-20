@@ -1,9 +1,9 @@
 # leoml
 
 ## Intro
-StLeoX's OCaml-syntax-like language compiler. Only FrontEnd currently.
+StLeoX's OCaml-syntax-like language compiler. Only Parser, TypeCheker currently.
 
-BackEnd: Maybe an Interpreter?
+BackEnd: Maybe an Interpreter? Maybe linked to LLVM?
 
 
 
@@ -26,8 +26,9 @@ If no output file, then print to the stdout.
 ### Grammer
 
 > - No type lint.
->
-> - No builtin data struct.
+> - No ref.
+> - No Object syntax.
+> - Builtin data struct: pair.
 
 
 
@@ -135,33 +136,31 @@ comment ::= (* ... *)
 ### Precedence
 
 ```
-Highest -> Lowest:
+Highest --> Lowest:
 
 1. ( )  left associative
 
-2. . left associative
+2. * / left associative
 
-3. * / left associative
+3. + - left associative
 
-4. + - left associative
+4. < <= == <> >= > left associative
 
-5. < <= == <> >= > left associative
+5. && left associative
 
-6. && left associative
+6. || left associative
 
-7. || left associative
+7. if-then-else; while-do-done
 
-9. if-then-else; while-do-done
-
-10. ; left associative
+8. ; left associative
 
 ```
 
 
 
-### Feature
+## Feature
 
-Lexer:
+#### Lexer
 
 - Support using the '\\' to start a `newline` if you didn't finish current line yet.
 
@@ -170,22 +169,24 @@ Lexer:
 
 - No Pointer! No Pointer! No Pointer! (Everything is a reference?)
 
-Type System:
+#### Parser
+
+
+
+#### Type System
+
+- Simple data type supported, like int, float, bool, unit, function.
 
 - `Pair` Type ( dual-element list) supported, that means supporting:
   - construction: ( expb, epxb )
-  - first element access: fst ( expb )
-  - second elemant access: snd ( expb )
+  - first element access: fst ( expb, expb )
+  - second elemant access: snd ( expb, expb )
 
 - Not supporting mutable data structure , that means no `refs`, no `arrays`.
 
 
 
-
-
-
-
-### Reflection
+## Reflection
 
 1. 其实这个KwTrie冗余，因为已经存在KwMap。这个KwTrie唯一的作用可能是求First，但同样可以使用KwMap完成。
 
@@ -217,9 +218,34 @@ Type System:
 
 #### ToDo
 
-1.Eval: The Precedence of simple calculation is unimpled.
+1.Eval: An evaluater to eval the Expr, through visiting the tree from bottom.
 
-2.Problems in ExpbCompound.
+2.CodeGen: 
+
+
 
 #### Passed
 
+1.Parser passed.
+
+2.TypeChecker passed.
+
+
+
+## FAQs
+
+#### 1.How to conduct verification?
+
+First, you should install the Python3 environment.
+
+Then, in CLI input this to run the automated tester:
+
+> python3 ./test/tester.py
+
+Finally, the tester will display the test report.
+
+
+
+#### 2.How to contribute?
+
+Emm...free for you to modify the source code.

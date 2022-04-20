@@ -15,11 +15,10 @@ class Parser {
 private:
     TokenSequence _ts; // token stream
     Program *_program = nullptr; // The Root of AST
-    Token *_errorToken;
 
     Parser(const TokenSequence &ts) : _ts(ts), _program(Program::New()) {}
 
-    virtual ~Parser() {};
+    ~Parser() { delete _program; };
 
 public:
     static Parser *New(const TokenSequence &ts) { return new Parser(ts); }
