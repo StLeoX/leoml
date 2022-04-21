@@ -50,7 +50,9 @@ ExpaConstant *Parser::ParseConstant(const Token *token) {
 }
 
 Var *Parser::ParseVar(const Token *token) {
-    return Var::New(token);
+    auto ret = Var::New(token);
+    ret->scope->Insert(ret);
+    return ret;
 }
 
 ExpaIf *Parser::ParseExpaIf(const Token *token) {
@@ -61,7 +63,10 @@ ExpaIf *Parser::ParseExpaIf(const Token *token) {
     if (_ts.Try(Token::Else)) {
         els = ParseExp();
     }  // "else" optional
-    return ExpaIf::New(token, cond, then, els);
+    auto ret = ExpaIf::New(token, cond, then, els);
+    ret->TypeCheck();
+    ret->ScopeCheck();
+    return ret;
 }
 
 ExpaWhile *Parser::ParseExpaWhile(const Token *token) {
@@ -69,13 +74,16 @@ ExpaWhile *Parser::ParseExpaWhile(const Token *token) {
     _ts.Expect(Token::Do);  // "do" required
     auto body = ParseExp();
     _ts.Expect(Token::Done);  // "done" required
-    return ExpaWhile::New(token, cond, body);
+    auto ret = ExpaWhile::New(token, cond, body);
+    ret->TypeCheck();
+    ret->ScopeCheck();
+    return ret;
 }
 
 ExpaLet *Parser::ParseExpaLet(const Token *token) {
     auto ret = ExpaLet::New(token);
     do {
-        auto assign = ParseAssignStmt(_ts.Peek());
+        auto assign = ParseAssignStmt(_ts.Peek());  // todo!!!: impl Scope for ExpaLet
         switch (assign->kind) {
             case Stmt::VarAssignStmt:
                 ret->expPairList->push_back(std::pair(assign->var, assign->exp));
@@ -89,6 +97,8 @@ ExpaLet *Parser::ParseExpaLet(const Token *token) {
     } while (_ts.Try(Token::And));  // "and" optional, repeated
     _ts.Expect(Token::In);  // "in" required
     ret->body = ParseExp();
+    ret->TypeCheck();
+    ret->ScopeCheck();
     return ret;
 }
 
@@ -136,6 +146,7 @@ ExpbBinary *Parser::ParseExpbBinary(const Token *token) {
     auto rhs = ParseExpbBinaryRHS(0, lhs);  // parse rhs
     auto ret = dynamic_cast<ExpbBinary *>(rhs);  // casting
     ret->TypeCheck();
+    ret->ScopeCheck();
     return ret;
 }
 
@@ -155,6 +166,7 @@ Expb *Parser::ParseExpbBinaryRHS(int prec, Expb *lhs) {
         if (curPrec < nextPrec) {
             rhs = ParseExpbBinaryRHS(curPrec + 1, rhs);
             if (rhs == nullptr) return nullptr;
+            rhs->TypeCheck();
         }
         lhs = ExpbBinary::New(curToken, lhs, rhs);
     }
@@ -263,6 +275,8 @@ Exp *Parser::ParseExp() {
     else {
         _ts.PutBack();
         ret->expbList->push_back(ParseExpb());
+        ret->SetType(ret->expbList->front()->GetType());
+        ret->scope->Append(ret->expbList->front()->scope);
         return ret;
     }
     return nullptr;
@@ -270,7 +284,7 @@ Exp *Parser::ParseExp() {
 
 Func *Parser::ParseFunc(const Token *token) {
     auto ret = Func::New(token);
-    _ts.Try(Token::Rec);  // todo: "rec" related operation.
+    if (_ts.Try(Token::Rec)) { ret->isRec = true; };
     ret->name = ParseVar(_ts.Next())->name;
     if (_ts.Test('(')) {
         _ts.Next();
@@ -294,11 +308,15 @@ FuncCall *Parser::ParseFuncCall(const Token *token) {
     }
     ret->paramList = nullptr;
     ret->retValue = nullptr; // Unknown retValue before evaluating.
+    auto fund = dynamic_cast<Func *>(_program->scope->Find(token));
+    if (fund == nullptr) { CompileError(token, "undefined func here"); }
+    ret->TypeCheck(fund);
+    ret->scope->Insert(ret);// scope check
     return ret;
 }
 
 Stmt *Parser::ParseAssignStmt(const Token *token) {
-    auto ret = Stmt::New();
+    auto ret = Stmt::New(_program);
     auto peek3 = _ts.PeekNext();
     // var assign kind
     if (peek3->tag == '=') {
@@ -306,6 +324,9 @@ Stmt *Parser::ParseAssignStmt(const Token *token) {
         ret->var = ParseVar(_ts.Next());
         _ts.Expect('=');
         ret->exp = ParseExp();
+        ret->scope->Parent()->Insert(ret->var);
+        ret->var->scope->SetParent(ret->scope);
+        ret->var->SetType(ret->exp->GetType());  // only infer
         return ret;
     } // func assign kind
     else {
@@ -313,7 +334,11 @@ Stmt *Parser::ParseAssignStmt(const Token *token) {
         auto funcStmt = ParseFunc(token);
         _ts.Expect('=');
         funcStmt->body = ParseExp();
+        if (funcStmt->body == nullptr) { CompileError(token, "empty body for this function"); }
         ret->func = funcStmt;
+        ret->scope->Parent()->Insert(ret->func);
+        ret->func->scope->SetParent(ret->scope);
+        ret->func->TypeCheck();
         return ret;
     }
 }
@@ -328,10 +353,14 @@ Stmt *Parser::ParseStmt() {
     }
         // var stmt kind
     else if (peek->tag == Token::Var) {
-        auto ret = Stmt::New();
+        auto ret = Stmt::New(_program);
         ret->kind = Stmt::VarStmt;
-        ret->var = ParseVar(peek);
+        auto var = ParseVar(peek);
         _ts.Expect(Token::Dsemi);
+        // scope check
+        auto varFound = _program->scope->Find(var->GetRoot());
+        if (!varFound) { CompileError(var->GetRoot(), "undefined var here"); }
+        ret->var = varFound;
         return ret;
     } else {
         CompileError(peek, "unexpected stmt start");

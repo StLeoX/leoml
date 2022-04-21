@@ -42,8 +42,10 @@ bool TFunc::operator==(const TFunc &rhs) const {
     if (paramTypeList->size() != rhs.paramTypeList->size()) { return false; }
     auto lp = paramTypeList->begin();
     auto rp = rhs.paramTypeList->begin();
-    while (lp++ != paramTypeList->end() && rp++ != rhs.paramTypeList->end()) {
-        if (**lp != **rp) { return false; }
+    while (lp != paramTypeList->end() && rp != rhs.paramTypeList->end()) {
+        if (*(*lp) != *(*rp)) { return false; }
+        lp++;
+        rp++;
     }
     return true;
 }

@@ -56,7 +56,7 @@ void Stmt::Serialize(std::ostream &os) {
 }
 
 Stmt::~Stmt() {
-    delete var, func;
+    delete var, func, exp, scope;
 }
 
 void Exp::Serialize(std::ostream &os) {
@@ -81,6 +81,7 @@ void Exp::Serialize(std::ostream &os) {
 void Func::Serialize(std::ostream &os) {
     os << "+ func define";
     os << "  name:  " << name;
+    os << "  type: " << fun->GetName();
     ILT;
     os << "+ param list";
     INC;
@@ -100,8 +101,16 @@ void Func::Serialize(std::ostream &os) {
 }
 
 void Func::TypeCheck() {
-
-
+    _type->kind = Type::T_Func;
+    fun->retType->kind = body->GetType()->kind;
+    for (auto param:*paramList) {
+        if (Var *found = body->scope->Find(param->GetRoot())) {
+            fun->paramTypeList->push_back(Type::New(found->GetType()->kind));
+            param->SetType(found->GetType()->kind);
+        } else {
+            fun->paramTypeList->push_back(Type::New(Type::T_Unknown));
+        }
+    }
 }
 
 void FuncCall::Serialize(std::ostream &os) {
@@ -128,13 +137,18 @@ void FuncCall::Serialize(std::ostream &os) {
     DEC;
 }
 
-void FuncCall::TypeCheck() {
-    // find FuncDecl in the scope.
-    // todo: notice "rec" for special scope.
-    Func *fund;
-    fun->retType->Expect(fund->GetType()->kind, _root);
-
-
+void FuncCall::TypeCheck(Func *fund) {
+    fun->retType->ExpectOrInfer(fund->GetType()->kind, _root);
+    if (argList->size() != fund->paramList->size()) { CompileError(_root, "the count of arguments is unmatched"); }
+    auto ap = argList->begin();
+    auto pp = fund->paramList->begin();
+    while (ap != argList->end() && pp != fund->paramList->end()) {
+        (*ap)->GetType()->Expect((*pp)->GetType()->kind, (*ap)->GetRoot());
+        ap++;
+        pp++;
+    }
+    // after validation, then assign
+    fun = fund->fun;
 }
 
 void ExpbBinary::Serialize(std::ostream &os) {
@@ -163,12 +177,17 @@ void ExpbBinary::AdditiveOpTypeCheck() {
     auto ltype = _lhs->GetType();
     auto rtype = _rhs->GetType();
     switch (ltype->kind) {
+        case Type::T_Unknown:
+            ltype->ExpectOrInfer(Type::T_Int, _lhs->GetRoot());
+            rtype->ExpectOrInfer(Type::T_Int, _rhs->GetRoot());
+            _type->kind = Type::T_Int;
+            break;
         case Type::T_Int:
-            rtype->Expect(Type::T_Int, _rhs->GetRoot());
+            rtype->ExpectOrInfer(Type::T_Int, _rhs->GetRoot());
             _type->kind = Type::T_Int;
             break;
         case Type::T_Float:
-            rtype->Expect(Type::T_Float, _rhs->GetRoot());
+            rtype->ExpectOrInfer(Type::T_Float, _rhs->GetRoot());
             _type->kind = Type::T_Float;
             break;
         default:
@@ -182,14 +201,18 @@ void ExpbBinary::EqualityOpTypeCheck() {
     auto rtype = _rhs->GetType();
     _type->kind = Type::T_Bool;
     switch (ltype->kind) {
+        case Type::T_Unknown:
+            ltype->ExpectOrInfer(Type::T_Int, _lhs->GetRoot());
+            rtype->ExpectOrInfer(Type::T_Int, _rhs->GetRoot());
+            break;
         case Type::T_Int:
-            rtype->Expect(Type::T_Int, _rhs->GetRoot());
+            rtype->ExpectOrInfer(Type::T_Int, _rhs->GetRoot());
             break;
         case Type::T_Float:
-            rtype->Expect(Type::T_Float, _rhs->GetRoot());
+            rtype->ExpectOrInfer(Type::T_Float, _rhs->GetRoot());
             break;
         case Type::T_Bool:
-            rtype->Expect(Type::T_Bool, _rhs->GetRoot());
+            rtype->ExpectOrInfer(Type::T_Bool, _rhs->GetRoot());
             break;
         default:
             Type::UnExpect(ltype->kind, _lhs->GetRoot());
@@ -201,8 +224,8 @@ void ExpbBinary::BooleanOpTypeCheck() {
     auto ltype = _lhs->GetType();
     auto rtype = _rhs->GetType();
     _type->kind = Type::T_Bool;
-    ltype->Expect(Type::T_Bool, _lhs->GetRoot());
-    rtype->Expect(Type::T_Bool, _rhs->GetRoot());
+    ltype->ExpectOrInfer(Type::T_Bool, _lhs->GetRoot());
+    rtype->ExpectOrInfer(Type::T_Bool, _rhs->GetRoot());
 }
 
 void ExpbBinary::TypeCheck() {
@@ -229,6 +252,11 @@ void ExpbBinary::TypeCheck() {
             CompilePanic("unreachable");
             break;
     }
+}
+
+void ExpbBinary::ScopeCheck() {
+    scope->Append(_lhs->scope);
+    scope->Append(_rhs->scope);
 }
 
 void ExpbUnary::Serialize(std::ostream &os) {
@@ -335,8 +363,8 @@ ExpbSnd::~ExpbSnd() { delete _first, _second; }
 
 void Var::Serialize(std::ostream &os) {
     os << "| var";
+    os << "  name: " << name;
     os << "  type: " << _type->GetName();
-    os << "  ident: " << name;
 }
 
 void ExpaConstant::Serialize(std::ostream &os) {
@@ -384,7 +412,7 @@ void ExpaIf::Serialize(std::ostream &os) {
 
 void ExpaIf::TypeCheck() {
     _cond->GetType()->Expect(Type::T_Bool, _root);
-
+    CompilePanic("todo");
 }
 
 void ExpaWhile::Serialize(std::ostream &os) {
@@ -401,8 +429,7 @@ void ExpaWhile::Serialize(std::ostream &os) {
 }
 
 void ExpaWhile::TypeCheck() {
-
-
+    CompilePanic("todo");
 }
 
 void ExpaLet::Serialize(std::ostream &os) {
@@ -428,6 +455,5 @@ void ExpaLet::Serialize(std::ostream &os) {
 }
 
 void ExpaLet::TypeCheck() {
-
-
+    CompilePanic("todo");
 }

@@ -38,6 +38,10 @@ void Scope::InsertTag(Var *var) {
     Insert(TagName(var->name), var);
 }
 
+void Scope::Append(Scope *other) {
+    _map.merge(other->_map);
+}
+
 Var *Scope::Find(const std::string &name) {
     auto var = _map.find(name);
     if (var != _map.end())
@@ -55,7 +59,7 @@ Var *Scope::FindInCurScope(const std::string &name) {
 }
 
 void Scope::Insert(const std::string &name, Var *var) {
-    assert(FindInCurScope(name) == nullptr);
+    assert(var != nullptr);
     _map[name] = var;
 }
 

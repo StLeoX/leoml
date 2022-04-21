@@ -79,18 +79,19 @@ class Program : public ParseTreeNode {
     class TreeVisitor;
 
 private:
-    Program() : stmtList(new StmtList) {};
+    Program() : stmtList(new StmtList), scope(Scope::New(nullptr, S_FILE)) {};
 
 public:
     StmtList *stmtList;
+    Scope *scope;
 
-    virtual ~Program() { delete stmtList; };
+    ~Program() { delete stmtList, scope; };
 
     static Program *New() {
         return new Program();
     }
 
-    virtual void Serialize(std::ostream &os);
+    void Serialize(std::ostream &os);
 
 };
 
@@ -105,6 +106,9 @@ class Stmt : public ParseTreeNode {
     template<typename T> friend
     class TreeVisitor;
 
+private:
+    Stmt(Program *program) : scope(Scope::New(program->scope, S_BLOCK)) {}
+
 public:
     // stmt enum
     enum {
@@ -117,12 +121,16 @@ public:
     Func *func;
     Exp *exp;
     int kind;
+    Scope *scope;
 
-    virtual ~Stmt();
+    ~Stmt();
 
-    static Stmt *New() { return new Stmt(); }
+    static Stmt *New(Program *program) {
+        assert(program != nullptr);
+        return new Stmt(program);
+    }
 
-    virtual void Serialize(std::ostream &os);
+    void Serialize(std::ostream &os);
 
 };
 
@@ -145,11 +153,13 @@ protected:
     const Token *_root;
     Type *_type;
 
-    Exp(const Token *token) : _root(token), _type(Type::New(Type::T_Unknown)), expbList(new ExpbList) {};
+    Exp(const Token *token) : _root(token), _type(Type::New(Type::T_Unknown)), expbList(new ExpbList),
+                              scope(new Scope(nullptr, S_BLOCK)) {};
 
 public:
     Var *var;
     ExpbList *expbList;
+    Scope *scope;
 
     virtual ~Exp() { delete _root, _type, var, expbList; };
 
@@ -159,13 +169,17 @@ public:
 
     virtual void TypeCheck() {};
 
+    virtual void ScopeCheck() {};
+
     const Token *GetRoot() const { return _root; };
 
-    Type *GetType() const { return _type; }
+    virtual Type *GetType() { return _type; }
 
     void SetType(Type *type) { *_type = *type; }
 
     void SetType(int kind) { _type->kind = kind; }
+
+    bool IsVar() const { return _root->tag == Token::Var; }
 
 };
 
@@ -264,6 +278,11 @@ public:
      *     _type = T_Bool
      * */
     void BooleanOpTypeCheck();
+
+    /*
+     * Complete the scope
+     * */
+    virtual void ScopeCheck();
 
 };
 
@@ -455,12 +474,15 @@ class Func : public Var {
     class TreeVisitor;
 
 protected:
-    Func(const Token *token) : Var(token), paramList(new VarList), fun(nullptr) {}
+    Func(const Token *token) : Var(token), paramList(new VarList), fun(new TFunc()), isRec(false),
+                               scope(new Scope(nullptr, S_FUNC)) {}
 
 public:
     Exp *body;
     VarList *paramList;
     TFunc *fun;
+    bool isRec;
+    Scope *scope;
 
     virtual ~Func() { delete body, paramList; }
 
@@ -474,8 +496,15 @@ public:
      * infer rule:
      *     _type = T_Func
      *     fun.retType = type(body)
+     *     infer paramTypeList from body, scope needed.
      * */
     virtual void TypeCheck();
+
+    /*
+     * Return fun.retType instead of this._type as the type.
+     * */
+    virtual Type *GetType() { return fun->retType; }
+
 };
 
 /// FuncCall
@@ -503,8 +532,13 @@ public:
     /*
      * check rule:
      *     TypeCheck(arg) for arg in argList, scope needed.
+     *     Preparation: find the FuncDecl in the scope, pass it as an arg.
+     * infer rule:
+     *     None
+     * todo: notice "rec" for special scope.
      * */
-    virtual void TypeCheck();
+    virtual void TypeCheck(Func *fund);
+
 };
 
 /// Expa Constant

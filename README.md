@@ -75,7 +75,7 @@ assignStmt ::= funcDecl = exp
 
 # func
 funcDecl ::= [rec]? var [( varlist )]?  # varlist optional
-funcCall ::= var [( varlist )]?  # varlist optional
+funcCall ::= var [( expblist )]?  # varlist optional
 
 # exp
 exp ::= var expblist
@@ -211,6 +211,12 @@ Highest --> Lowest:
 11. 一个非常坑的地方：二元运算符'+'和一元运算符'+'可以混用吗？尤其是如何区分： exp = var <u>+expa</u>  和 exp = <u>var+expa</u>，两者从ts来看完全一致，如果不区分二元运算符'+'和一元运算符'+'的话。
 
 12. `func`应该从`decl`中独立出来，从而达成复用。且无参函数不应该携带括号以接收参数，因为Token`()`已经被识别为Token::Unit。
+
+13. Scope现在只做到了program级别。另外let...in...可以做Scope，就是let parentScope in childScope。
+
+14. 处理Scope和TypeCheck的时候，牢记`属性文法框架`，以及递推的基本形式。
+
+15. **从最基本的组织架构原则来看，在Enhance Parser时，ScopeCheck和TypeCheck应当是作为AfterHook，AOP到Parse的尾部。**
 
     
 

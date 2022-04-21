@@ -14,9 +14,10 @@
 class Parser {
 private:
     TokenSequence _ts; // token stream
-    Program *_program = nullptr; // The Root of AST
+    Program *_program; // the Root of AST
+    Scope *currentScope; // current scope
 
-    Parser(const TokenSequence &ts) : _ts(ts), _program(Program::New()) {}
+    Parser(const TokenSequence &ts) : _ts(ts), _program(Program::New()) { currentScope = _program->scope; }
 
     ~Parser() { delete _program; };
 

@@ -17,9 +17,9 @@ class Var;
 class Token;
 
 typedef enum {
-    S_FILE,
-    S_BLOCK,
-    S_FUNC,
+    S_FILE,  // 文件作用域
+    S_BLOCK,  // 块作用域
+    S_FUNC,  // 函数作用域（函数参数&函数体）
 } ScopeKind;
 
 class Scope {
@@ -27,16 +27,18 @@ class Scope {
     using VarMap = std::map<std::string, Var *>;
 
 public:
-    explicit Scope(Scope *parent, ScopeKind type)
-            : _parent(parent), _kind(type) {}
+    Scope(Scope *parent, ScopeKind kind)
+            : _parent(parent), _kind(kind) {}
 
     ~Scope() {}
+
+    static Scope *New(Scope *parent, ScopeKind kind) { return new Scope(parent, kind); }
 
     Scope *Parent() { return _parent; }
 
     void SetParent(Scope *parent) { _parent = parent; }
 
-    ScopeKind Type() const { return _kind; }
+    ScopeKind Kind() const { return _kind; }
 
     Var *Find(const Token *token);
 
@@ -53,6 +55,8 @@ public:
     void Insert(const std::string &name, Var *var);
 
     void InsertTag(Var *var);
+
+    void Append(Scope *other);
 
     void Serialize(std::ostream &os);
 

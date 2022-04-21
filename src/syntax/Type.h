@@ -41,6 +41,8 @@ public:
 
     std::string GetName() { return KindLookup(kind); }
 
+    /// Expect
+    // expect specific type at this token
     bool Expect(int expect, const Token *token) {
         if (kind != expect) {
             CompileError(token, "Type `%s` expected, but got `%s`",
@@ -51,9 +53,21 @@ public:
         return true;
     }
 
+    /// Expect or Infer
+    // If type at this token is T_Unknown, then set it to expect, else Expect it.
+    void ExpectOrInfer(int expect, const Token *token) {
+        if (kind == T_Unknown) {
+            kind = expect;
+        } else {
+            Expect(expect, token);
+        }
+    }
+
     static void UnExpect(int unexpect, const Token *token) {
         CompileError(token, "Unexpected type `%s` found here", Type::KindLookup(unexpect).c_str());
     }
+
+    bool IsUnknown() const { return kind == T_Unknown; }
 
     static Type *New(int k) { return new Type(k); }
 
@@ -69,12 +83,12 @@ using TypeList = std::list<Type *>;
 /// TFunc
 // func type IS-A compound type.
 class TFunc {
-private:
-    TFunc() : retType(Type::New(Type::T_Unknown)), paramTypeList(new TypeList) {};
 
 public:
     Type *retType;
     TypeList *paramTypeList;
+
+    TFunc() : retType(Type::New(Type::T_Unknown)), paramTypeList(new TypeList) {};
 
     bool operator==(const TFunc &rhs) const;
 
