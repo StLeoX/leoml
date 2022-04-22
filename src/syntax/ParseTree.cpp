@@ -327,6 +327,11 @@ void ExpbCompound::Serialize(std::ostream &os) {
 
 ExpbCompound::~ExpbCompound() { delete _first, _second; }
 
+void ExpbCompound::TypeCheck() {
+    _first->GetType()->ExpectOrInfer(Type::T_Unit, _first->GetRoot());
+    SetType(_second->GetType());
+}
+
 void ExpbFst::Serialize(std::ostream &os) {
     os << "+ expbFst";
     ILT;
@@ -411,8 +416,59 @@ void ExpaIf::Serialize(std::ostream &os) {
 }
 
 void ExpaIf::TypeCheck() {
-    _cond->GetType()->Expect(Type::T_Bool, _root);
-    CompilePanic("todo");
+    _cond->GetType()->ExpectOrInfer(Type::T_Bool, _cond->GetRoot());
+    if (_els == nullptr) {
+        switch (_then->GetType()->kind) {
+            case Type::T_Unknown:
+                _then->GetType()->ExpectOrInfer(Type::T_Unit, _then->GetRoot());
+                _type->kind = Type::T_Unit;
+                break;
+            case Type::T_Int:
+                _type->kind = Type::T_Int;
+                break;
+            case Type::T_Float:
+                _type->kind = Type::T_Float;
+                break;
+            case Type::T_Bool:
+                _type->kind = Type::T_Bool;
+                break;
+            case Type::T_Unit:
+                _type->kind = Type::T_Unit;
+                break;
+            default:
+                Type::UnExpect(_then->GetType()->kind, _then->GetRoot());
+                break;
+        }
+    } else {
+        auto ttype = _then->GetType();
+        auto etype = _els->GetType();
+        switch (ttype->kind) {
+            case Type::T_Unknown:
+                ttype->ExpectOrInfer(Type::T_Unit, _then->GetRoot());
+                etype->ExpectOrInfer(Type::T_Unit, _els->GetRoot());
+                _type->kind = Type::T_Unit;
+                break;
+            case Type::T_Int:
+                etype->ExpectOrInfer(Type::T_Int, _els->GetRoot());
+                _type->kind = Type::T_Int;
+                break;
+            case Type::T_Float:
+                etype->ExpectOrInfer(Type::T_Float, _els->GetRoot());
+                _type->kind = Type::T_Float;
+                break;
+            case Type::T_Bool:
+                etype->ExpectOrInfer(Type::T_Bool, _els->GetRoot());
+                _type->kind = Type::T_Bool;
+                break;
+            case Type::T_Unit:
+                etype->ExpectOrInfer(Type::T_Unit, _els->GetRoot());
+                _type->kind = Type::T_Unit;
+                break;
+            default:
+                Type::UnExpect(_then->GetType()->kind, _then->GetRoot());
+                break;
+        }
+    }
 }
 
 void ExpaWhile::Serialize(std::ostream &os) {
@@ -429,7 +485,28 @@ void ExpaWhile::Serialize(std::ostream &os) {
 }
 
 void ExpaWhile::TypeCheck() {
-    CompilePanic("todo");
+    _cond->GetType()->ExpectOrInfer(Type::T_Bool, _cond->GetRoot());
+    switch (_body->GetType()->kind) {
+        case Type::T_Unknown:
+            _body->GetType()->ExpectOrInfer(Type::T_Unit, _body->GetRoot());
+            _type->kind = Type::T_Unit;
+            break;
+        case Type::T_Int:
+            _type->kind = Type::T_Int;
+            break;
+        case Type::T_Float:
+            _type->kind = Type::T_Float;
+            break;
+        case Type::T_Bool:
+            _type->kind = Type::T_Bool;
+            break;
+        case Type::T_Unit:
+            _type->kind = Type::T_Unit;
+            break;
+        default:
+            Type::UnExpect(_body->GetType()->kind, _body->GetRoot());
+            break;
+    }
 }
 
 void ExpaLet::Serialize(std::ostream &os) {
@@ -455,5 +532,6 @@ void ExpaLet::Serialize(std::ostream &os) {
 }
 
 void ExpaLet::TypeCheck() {
-    CompilePanic("todo");
+    // todo: scope combine
+    SetType(body->GetType());
 }

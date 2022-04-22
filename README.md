@@ -1,11 +1,10 @@
 # leoml
 
 ## Intro
+
 StLeoX's OCaml-syntax-like language compiler. Only Parser, TypeCheker currently.
 
 BackEnd: Maybe an Interpreter? Maybe linked to LLVM?
-
-
 
 ## Usage
 
@@ -19,8 +18,6 @@ leoml [-h|--help]
 
 If no output file, then print to the stdout.
 
-
-
 ## Design
 
 ### Grammer
@@ -32,17 +29,17 @@ If no output file, then print to the stdout.
 
 
 
-> Keywords: 
+> Keywords:
 >
-> let, and, in 
+> let, and, in
 >
-> if, then, else 
+> if, then, else
 >
 > while, do, done
 >
-> true, false 
+> true, false
 >
-> fst, snd 
+> fst, snd
 >
 > rec
 >
@@ -53,8 +50,6 @@ If no output file, then print to the stdout.
 > > match, with
 > >
 > > for,to, do, done
-
-
 
 ```
 program ::= stmtlist eof
@@ -131,8 +126,6 @@ comment ::= (* ... *)
 
 ```
 
-
-
 ### Precedence
 
 ```
@@ -156,8 +149,6 @@ Highest --> Lowest:
 
 ```
 
-
-
 ## Feature
 
 #### Lexer
@@ -171,20 +162,16 @@ Highest --> Lowest:
 
 #### Parser
 
-
-
 #### Type System
 
 - Simple data type supported, like int, float, bool, unit, function.
 
 - `Pair` Type ( dual-element list) supported, that means supporting:
-  - construction: ( expb, epxb )
-  - first element access: fst ( expb, expb )
-  - second elemant access: snd ( expb, expb )
+    - construction: ( expb, epxb )
+    - first element access: fst ( expb, expb )
+    - second elemant access: snd ( expb, expb )
 
 - Not supporting mutable data structure , that means no `refs`, no `arrays`.
-
-
 
 ## Reflection
 
@@ -200,7 +187,8 @@ Highest --> Lowest:
 
 6. ASTNode当中可能的_root字段被用来记录continuation的start位置（主要是利用到token->loc），而可能的\_op字段才是用来记录ASTNode的唯一类型，所以两者并不对应。
 
-7. 建立的TokenSequence实体来表示符号栈，实际上这**并不是理论上纯粹的栈**，这个栈可以看到PeekNext从而帮助判断，这个栈甚至是支持“倒带”看到PeekPrior（）。所以Parser也不是纯粹的LR(1) Parser，而是部分具备LR(2)的特征。
+7. 建立的TokenSequence实体来表示符号栈，实际上这**并不是理论上纯粹的栈**，这个栈可以看到PeekNext从而帮助判断，这个栈甚至是支持“倒带”看到PeekPrior（）。所以Parser也不是纯粹的LR(1)
+   Parser，而是部分具备LR(2)的特征。
 
 8. 实际上，在做operator<<的部分，也是同样地在写`Producer Pattern`。
 
@@ -208,7 +196,8 @@ Highest --> Lowest:
 
 10. 一个比较遗憾的地方是，我很喜欢`cons` kw，但在OCaml里面不需要cons就能直接构造`Piar` : (epxa, expb)。所以最后还是没支持cons kw。
 
-11. 一个非常坑的地方：二元运算符'+'和一元运算符'+'可以混用吗？尤其是如何区分： exp = var <u>+expa</u>  和 exp = <u>var+expa</u>，两者从ts来看完全一致，如果不区分二元运算符'+'和一元运算符'+'的话。
+11. 一个非常坑的地方：二元运算符'+'和一元运算符'+'可以混用吗？尤其是如何区分： exp = var <u>+expa</u>  和 exp = <u>var+expa</u>，两者从ts来看完全一致，如果不区分二元运算符'+'
+    和一元运算符'+'的话。
 
 12. `func`应该从`decl`中独立出来，从而达成复用。且无参函数不应该携带括号以接收参数，因为Token`()`已经被识别为Token::Unit。
 
@@ -218,17 +207,13 @@ Highest --> Lowest:
 
 15. **从最基本的组织架构原则来看，在Enhance Parser时，ScopeCheck和TypeCheck应当是作为AfterHook，AOP到Parse的尾部。**
 
-    
-
 ### Schedule
 
 #### ToDo
 
 1.Eval: An evaluater to eval the Expr, through visiting the tree from bottom.
 
-2.CodeGen: 
-
-
+2.CodeGen:
 
 #### Passed
 
@@ -236,21 +221,18 @@ Highest --> Lowest:
 
 2.TypeChecker passed.
 
-
-
 ## FAQs
 
 #### 1.How to conduct verification?
 
 First, you should install the Python3 environment.
 
-Then, in CLI input this to run the automated tester:
+Then, in CLI input this to run the automated tester. Notice that you should have set the exe path before, like "
+../src/cmake-build-debug/leoml.exe".
 
 > python3 ./test/tester.py
 
 Finally, the tester will display the test report.
-
-
 
 #### 2.How to contribute?
 

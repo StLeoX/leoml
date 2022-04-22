@@ -367,6 +367,14 @@ public:
 
     virtual void Serialize(std::ostream &os);
 
+    /*
+     * check rule:
+     *     type(first) == T_Unit
+     * infer rule:
+     *     _type = type(second)
+     * */
+    virtual void TypeCheck();
+
 };
 
 /// Expb Fst
@@ -496,7 +504,7 @@ public:
      * infer rule:
      *     _type = T_Func
      *     fun.retType = type(body)
-     *     infer paramTypeList from body, scope needed.
+     *     infer paramTypeList from body, scope needed
      * */
     virtual void TypeCheck();
 
@@ -626,9 +634,10 @@ public:
     /*
      * check rule:
      *     type(cond) == T_Bool
-     *     type(then) [== type(els)] == T_Int/T_Float/T_Bool
+     *     type(then) [== type(els)] == T_Int/T_Float/T_Bool/T_Unit
      * infer rule:
      *     _type = type(then)
+     *     IF type(then) == T_Unknown, THEN type(then) = T_Unit
      * */
     virtual void TypeCheck();
 
@@ -691,7 +700,7 @@ public:
 
     /*
      * check rule:
-     *     TypeCheck(pair) for pair in expPairList
+     *     TypeCheck(pair) for pair in expPairList, finished after ParseAssign.
      * infer rule:
      *     _type = type(body)
      * */

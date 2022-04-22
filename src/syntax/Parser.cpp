@@ -275,8 +275,8 @@ Exp *Parser::ParseExp() {
     else {
         _ts.PutBack();
         ret->expbList->push_back(ParseExpb());
-        ret->SetType(ret->expbList->front()->GetType());
-        ret->scope->Append(ret->expbList->front()->scope);
+        ret->SetType(ret->expbList->front()->GetType()); // type check
+        ret->scope->Append(ret->expbList->front()->scope); // scope check
         return ret;
     }
     return nullptr;
@@ -293,6 +293,9 @@ Func *Parser::ParseFunc(const Token *token) {
         } while (_ts.Try(Token::Comma));
         _ts.Expect(')');
     }
+    // todo: complete the scope check.
+    // Currently, every func's parent link to _program.
+    if (ret->isRec) { _program->scope->Insert(ret); }
     return ret;
 }
 
@@ -308,10 +311,11 @@ FuncCall *Parser::ParseFuncCall(const Token *token) {
     }
     ret->paramList = nullptr;
     ret->retValue = nullptr; // Unknown retValue before evaluating.
+    // scope check
     auto fund = dynamic_cast<Func *>(_program->scope->Find(token));
     if (fund == nullptr) { CompileError(token, "undefined func here"); }
+    ret->scope->Insert(ret);
     ret->TypeCheck(fund);
-    ret->scope->Insert(ret);// scope check
     return ret;
 }
 
@@ -336,6 +340,7 @@ Stmt *Parser::ParseAssignStmt(const Token *token) {
         funcStmt->body = ParseExp();
         if (funcStmt->body == nullptr) { CompileError(token, "empty body for this function"); }
         ret->func = funcStmt;
+        // scope check
         ret->scope->Parent()->Insert(ret->func);
         ret->func->scope->SetParent(ret->scope);
         ret->func->TypeCheck();
