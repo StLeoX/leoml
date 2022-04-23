@@ -1,0 +1,17 @@
+(* # nested positive testcases *)
+
+(* nested if expr *)
+let a1 = if if 1<2 then true else false
+  then if true then 1 else 2
+;;
+
+(* combined if expr and while expr *)
+let a2 = while true
+  do if 1<2 then ()
+  done
+;;
+
+(* nested cons/fst/snd expr *)
+(*let nested_cons = (1, (2, (3, 4)));;
+let nested_fst = fst (1+2, fst(3,4));;
+let nested_snd = snd (3, snd(2-1,1));;*)

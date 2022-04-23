@@ -1,0 +1,24 @@
+(* # basic positive testcases *)
+
+(* basic var decl *)
+let a1 = 1;;
+(* basic var single*)
+a1;;
+
+(* basic expr *)
+let b1 = 1+2*3;;
+(* expr with prec *)
+let b2 = 1*2+3;;
+(* expr with paran *)
+let b3 = 1*(2+3);;
+(* expr using unary op *)
+let b4 = -1;;
+
+(* basic if *)
+let c1 = if true then 1 else 2;;
+let c2 = if 2<3 then true else false;;
+
+(* basic while *)
+let d1 = while false do () done;;
+let d2 = while true||false do () done;;
+

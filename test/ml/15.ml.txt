@@ -1,0 +1,5 @@
+(* # function-related negative testcases *)
+
+(* arguments type error *)
+let sum(a, b) = a+b;;
+let x = sum(1,2.0);;

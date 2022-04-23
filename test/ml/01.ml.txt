@@ -1,0 +1,13 @@
+(* # function-related positive testcases *)
+
+(* basic function *)
+let get_i (i) = i;;
+let sum (a, b) = a+b;;
+
+(* function with if/while *)
+let f3(a,b,c) = if a then b else c;;
+let f4(a,b) = while a do b done;;
+
+(* function call *)
+let a = sum(1, 2);;
+sum;;

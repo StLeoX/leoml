@@ -1,0 +1,6 @@
+(* # basic negative testcases *)
+
+(* parse error *)
+let a1 = 1,2;;
+
+let a2 = if 1;;

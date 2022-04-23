@@ -1,0 +1,7 @@
+(* # basic negative testcases *)
+
+(* type error *)
+let a1 = while 1 do () done;;
+
+
+

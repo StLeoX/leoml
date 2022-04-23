@@ -1,0 +1,15 @@
+(* # basic negative testcases *)
+
+(* type error *)
+let a1 = 1+true;;
+
+(* other cases similar *)
+let a2 = 1+2.0;;
+
+let a3 = 1||2;;
+
+let a4 = 999>false;;
+
+
+
+

@@ -1,0 +1,4 @@
+(* # function-related negative testcases *)
+
+(* undefined function *)
+let a=sum(1,2);;

@@ -1,0 +1,9 @@
+(* # basic negative testcases *)
+
+(* type error *)
+let a1 = if 1 then 2 else 3;;
+
+let a2 = if true then 1 else false;;
+
+
+
