@@ -78,6 +78,13 @@ void Exp::Serialize(std::ostream &os) {
     }
 }
 
+void Exp::ScopeCheck() {
+    scope->Insert(var);
+    for (auto expb:*expbList) {
+        scope->Append(scope);
+    }
+}
+
 void Func::Serialize(std::ostream &os) {
     os << "+ func define";
     os << "  name:  " << name;
@@ -471,6 +478,19 @@ void ExpaIf::TypeCheck() {
     }
 }
 
+void ExpaIf::ScopeCheck() {
+    // todo: Here exists a Bug. Typecheck didn't influent the inner scope.
+    // naive solution: only for "if a then b else c" this case.
+    _cond->scope->Find(_cond->GetRoot())->SetType(_cond->GetType());
+    scope->Append(_cond->scope);
+    _then->scope->Find(_then->GetRoot())->SetType(_then->GetType());
+    scope->Append(_then->scope);
+    if (_els != nullptr) {
+        _els->scope->Find(_els->GetRoot())->SetType(_els->GetType());
+        scope->Append(_els->scope);
+    }
+}
+
 void ExpaWhile::Serialize(std::ostream &os) {
     os << "+ expaWhile";
     ILT;
@@ -507,6 +527,14 @@ void ExpaWhile::TypeCheck() {
             Type::UnExpect(_body->GetType()->kind, _body->GetRoot());
             break;
     }
+}
+
+void ExpaWhile::ScopeCheck() {
+    // naive solution: only for "while a do b done" this case.
+    _cond->scope->Find(_cond->GetRoot())->SetType(_cond->GetType());
+    scope->Append(_cond->scope);
+    _body->scope->Find(_body->GetRoot())->SetType(_body->GetType());
+    scope->Append(_body->scope);
 }
 
 void ExpaLet::Serialize(std::ostream &os) {

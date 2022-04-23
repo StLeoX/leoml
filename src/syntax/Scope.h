@@ -28,7 +28,7 @@ class Scope {
 
 public:
     Scope(Scope *parent, ScopeKind kind)
-            : _parent(parent), _kind(kind) {}
+            : _parent(parent), _kind(kind) { _map = {}; }
 
     ~Scope() {}
 

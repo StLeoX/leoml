@@ -162,6 +162,8 @@ Highest --> Lowest:
 
 #### Parser
 
+- No parsing error recover. So if you want to test something, you'd better input one case each time.
+
 #### Type System
 
 - Simple data type supported, like int, float, bool, unit, function.
@@ -230,7 +232,7 @@ First, you should install the Python3 environment.
 Then, in CLI input this to run the automated tester. Notice that you should have set the exe path before, like "
 ../src/cmake-build-debug/leoml.exe".
 
-> python3 ./test/tester.py
+> cd test && python3 ./test/tester.py
 
 Finally, the tester will display the test report.
 

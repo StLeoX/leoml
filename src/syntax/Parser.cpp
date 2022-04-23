@@ -269,14 +269,18 @@ Exp *Parser::ParseExp() {
             expb = ParseExpb();
         }
         _ts.PutBack();
+        ret->ScopeCheck();
         return ret;
     }
         // exp ::= expb
     else {
         _ts.PutBack();
-        ret->expbList->push_back(ParseExpb());
-        ret->SetType(ret->expbList->front()->GetType()); // type check
-        ret->scope->Append(ret->expbList->front()->scope); // scope check
+        auto expb = ParseExpb();
+        if (expb != nullptr) {
+            ret->expbList->push_back(expb);
+            ret->SetType(expb->GetType()); // type check
+            ret->scope->Append(expb->scope); // scope check
+        }
         return ret;
     }
     return nullptr;

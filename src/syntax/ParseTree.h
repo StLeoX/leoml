@@ -169,7 +169,7 @@ public:
 
     virtual void TypeCheck() {};
 
-    virtual void ScopeCheck() {};
+    virtual void ScopeCheck();
 
     const Token *GetRoot() const { return _root; };
 
@@ -641,6 +641,8 @@ public:
      * */
     virtual void TypeCheck();
 
+    virtual void ScopeCheck();
+
 };
 
 /// Expa While
@@ -672,6 +674,8 @@ public:
      *     _type = T_Unit
      * */
     virtual void TypeCheck();
+
+    virtual void ScopeCheck();
 
 };
 
