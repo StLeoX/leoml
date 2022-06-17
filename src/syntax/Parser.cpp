@@ -86,10 +86,10 @@ ExpaLet *Parser::ParseExpaLet(const Token *token) {
         auto assign = ParseAssignStmt(_ts.Peek());  // todo!!!: impl Scope for ExpaLet
         switch (assign->kind) {
             case Stmt::VarAssignStmt:
-                ret->expPairList->push_back(std::pair(assign->var, assign->exp));
+                ret->expPairList->push_back(std::pair<Var *, Exp *>(assign->var, assign->exp));
                 break;
             case Stmt::FuncAssignStmt:
-                ret->expPairList->push_back(std::pair(assign->func, static_cast<Exp *>(nullptr)));
+                ret->expPairList->push_back(std::pair<Func *, Exp *>(assign->func, static_cast<Exp *>(nullptr)));
                 break;
             default:
                 CompilePanic("unreachable in ParseExpaLet");

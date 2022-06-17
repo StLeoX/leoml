@@ -1,7 +1,6 @@
 #include <fstream>
 #include <iostream>
 #include <list>
-#include <filesystem>
 
 #include "syntax/Token.h"
 #include "syntax/Lexer.h"
@@ -9,7 +8,6 @@
 #include "syntax/ParseTree.h"
 #include "syntax/Scope.h"
 #include "syntax/Type.h"
-#include "jit.h"
 
 #include "syntax/Token.cpp"
 #include "syntax/Lexer.cpp"
@@ -18,12 +16,13 @@
 #include "syntax/Scope.cpp"
 #include "syntax/Type.cpp"
 
- #include "jit.cpp"
+#include "jit/jit.h"
+#include "jit/jit.cpp"
 
 static std::string source_path = "";
 static std::string output_dir = "";  // "." for example
 static std::list<std::string> source_list{};
-static Program *program;
+static Program *TheProgram;
 
 void Usage() {
     printf("Usage: leoml [-o <output>] [options] <source>\n"
@@ -77,7 +76,7 @@ void Tokenize() {
         Lexer *lexer = Lexer::New(LoadFile(source), &name);
         lexer->Tokenize(*ts);
         if (output_dir != "") {
-            auto outpath = std::filesystem::absolute(output_dir + "/" + name + ".ts.txt");
+            std::string outpath = output_dir + "/" + name + ".ts.txt";
             std::ofstream out{outpath};
             ts->Serialize(out);
         } else { ts->Serialize(std::cout); }
@@ -96,7 +95,7 @@ void Parse() {
         Parser *parser = Parser::New(*ts);
         parser->Parse();
         if (output_dir != "") {
-            auto outpath = std::filesystem::absolute(output_dir + "/" + name + ".ast.txt");
+            std::string outpath = output_dir + "/" + name + ".ts.txt";
             std::ofstream out{outpath};
             parser->Serialize(out);
         } else {
@@ -105,6 +104,14 @@ void Parse() {
         }
         delete ts, parser;
     }
+}
+
+void Eval(Program &program) {
+    std::cout << "Unsupported yet." << std::endl;
+}
+
+void Repl() {
+    std::cout << "Unsupported yet." << std::endl;
 }
 
 int main(int argc, char *argv[]) {
@@ -132,7 +139,7 @@ int main(int argc, char *argv[]) {
             break;
         case 'e':
             Parse();
-            Jit(*program);
+            Eval(*TheProgram);
             break;
         case 'i':
             Repl();

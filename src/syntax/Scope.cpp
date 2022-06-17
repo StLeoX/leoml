@@ -39,7 +39,9 @@ void Scope::InsertTag(Var *var) {
 }
 
 void Scope::Append(Scope *other) {
-    _map.merge(other->_map);
+    for (auto &item:other->_map) {
+        _map.insert(item);
+    }
 }
 
 Var *Scope::Find(const std::string &name) {

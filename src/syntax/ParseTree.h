@@ -12,8 +12,6 @@
 #include <unordered_map>
 #include <iostream>
 #include <ostream>
-#include "llvm/IR/Value.h"
-#include "llvm/IR/Function.h"
 
 #include "Token.h"
 #include "Scope.h"
@@ -37,7 +35,7 @@ public:
 
     virtual void Serialize(std::ostream &os) = 0;  // Serialize the node.
 
-    virtual llvm::Value *codegen() = 0;  // JIT codegen
+//    virtual llvm::Value *codegen() = 0;  // JIT codegen
 
 };
 
@@ -97,7 +95,7 @@ public:
 
     void Serialize(std::ostream &os);
 
-    virtual llvm::Value *codegen() { return nullptr; }
+//    virtual llvm::Value *codegen() { return nullptr; }
 
 
 };
@@ -139,7 +137,7 @@ public:
 
     void Serialize(std::ostream &os);
 
-    virtual llvm::Value *codegen() { return nullptr; }
+//    virtual llvm::Value *codegen() { return nullptr; }
 
 
 };
@@ -191,7 +189,7 @@ public:
 
     bool IsVar() const { return _root->tag == Token::Var; }
 
-    virtual llvm::Value *codegen() { return nullptr; }
+//    virtual llvm::Value *codegen() { return nullptr; }
 
 
 };
@@ -226,7 +224,7 @@ public:
 
     virtual void TypeCheck() {};
 
-    virtual llvm::Value *codegen() { return nullptr; }
+//    virtual llvm::Value *codegen() { return nullptr; }
 
 
 };
@@ -300,7 +298,7 @@ public:
      * */
     virtual void ScopeCheck();
 
-    virtual llvm::Value *codegen();
+//    virtual llvm::Value *codegen();
 
 };
 
@@ -337,7 +335,7 @@ public:
      * */
     virtual void TypeCheck();
 
-    virtual llvm::Value *codegen() { return nullptr; }
+//    virtual llvm::Value *codegen() { return nullptr; }
 
 
 };
@@ -470,7 +468,7 @@ public:
     // Expa should not be directly serilizated.
 //    virtual void Serialize(std::ostream &os);
 
-    virtual llvm::Value *codegen() { return nullptr; }
+//    virtual llvm::Value *codegen() { return nullptr; }
 
 
 };
@@ -494,7 +492,7 @@ public:
 
     virtual void Serialize(std::ostream &os);
 
-    virtual llvm::Value *codegen();
+//    virtual llvm::Value *codegen();
 
 };
 
@@ -539,9 +537,9 @@ public:
      * */
     virtual Type *GetType() { return fun->retType; }
 
-    virtual llvm::Value *codegen();
+//    virtual llvm::Value *codegen();
 
-    llvm::Function *codegen_func();
+//    llvm::Function *codegen_func();
 
 };
 
@@ -578,7 +576,7 @@ public:
      * */
     virtual void TypeCheck();
 
-    virtual llvm::Value *codegen();
+//    virtual llvm::Value *codegen();
 
 };
 
@@ -638,7 +636,7 @@ public:
 
     virtual void Serialize(std::ostream &os);
 
-    virtual llvm::Value *codegen();
+//    virtual llvm::Value *codegen();
 
 };
 
