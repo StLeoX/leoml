@@ -318,8 +318,9 @@ FuncCall *Parser::ParseFuncCall(const Token *token) {
     // scope check
     auto fund = dynamic_cast<Func *>(_program->scope->Find(token));
     if (fund == nullptr) { CompileError(token, "undefined func here"); }
+    ret->proto = fund;
     ret->scope->Insert(ret);
-    ret->TypeCheck(fund);
+    ret->TypeCheck();
     return ret;
 }
 

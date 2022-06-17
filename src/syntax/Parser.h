@@ -29,6 +29,10 @@ public:
         _program = ParseProgram();
     }
 
+    Program* GetProgram(){
+        return _program;
+    }
+
     void Serialize(std::ostream &os);
 
     Program *ParseProgram();

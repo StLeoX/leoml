@@ -12,6 +12,8 @@
 #include <unordered_map>
 #include <iostream>
 #include <ostream>
+#include "llvm/IR/Value.h"
+#include "llvm/IR/Function.h"
 
 #include "Token.h"
 #include "Scope.h"
@@ -34,6 +36,8 @@ public:
 //    virtual void Accept(Visitor *v) = 0;  // Terminate the visiting.
 
     virtual void Serialize(std::ostream &os) = 0;  // Serialize the node.
+
+    virtual llvm::Value *codegen() = 0;  // JIT codegen
 
 };
 
@@ -93,6 +97,9 @@ public:
 
     void Serialize(std::ostream &os);
 
+    virtual llvm::Value *codegen() { return nullptr; }
+
+
 };
 
 /// Stmt
@@ -131,6 +138,9 @@ public:
     }
 
     void Serialize(std::ostream &os);
+
+    virtual llvm::Value *codegen() { return nullptr; }
+
 
 };
 
@@ -181,6 +191,9 @@ public:
 
     bool IsVar() const { return _root->tag == Token::Var; }
 
+    virtual llvm::Value *codegen() { return nullptr; }
+
+
 };
 
 /// Expb
@@ -212,6 +225,9 @@ public:
 //    virtual void Serialize(std::ostream &os);
 
     virtual void TypeCheck() {};
+
+    virtual llvm::Value *codegen() { return nullptr; }
+
 
 };
 
@@ -284,6 +300,8 @@ public:
      * */
     virtual void ScopeCheck();
 
+    virtual llvm::Value *codegen();
+
 };
 
 /// Expb Unary
@@ -318,6 +336,9 @@ public:
      *     _type = T_Int/T_Float
      * */
     virtual void TypeCheck();
+
+    virtual llvm::Value *codegen() { return nullptr; }
+
 
 };
 
@@ -449,6 +470,9 @@ public:
     // Expa should not be directly serilizated.
 //    virtual void Serialize(std::ostream &os);
 
+    virtual llvm::Value *codegen() { return nullptr; }
+
+
 };
 
 /// Expa Var
@@ -469,6 +493,8 @@ public:
     void SetTok(const Token *token) { _root = token; }
 
     virtual void Serialize(std::ostream &os);
+
+    virtual llvm::Value *codegen();
 
 };
 
@@ -513,12 +539,16 @@ public:
      * */
     virtual Type *GetType() { return fun->retType; }
 
+    virtual llvm::Value *codegen();
+
+    llvm::Function *codegen_func();
+
 };
 
 /// FuncCall
 /*
  * funcCall extends funcStmt and expa:
- *     funcCall has the return value as Exp*
+ *     funcCall has the return llvm::Value as Exp*
  * */
 class FuncCall : public Func {
     template<typename T> friend
@@ -530,6 +560,7 @@ private:
 public:
     Exp *retValue;
     ExpbList *argList;
+    Func *proto;
 
     ~FuncCall() { delete retValue, argList; }
 
@@ -545,7 +576,9 @@ public:
      *     None
      * todo: notice "rec" for special scope.
      * */
-    virtual void TypeCheck(Func *fund);
+    virtual void TypeCheck();
+
+    virtual llvm::Value *codegen();
 
 };
 
@@ -604,6 +637,8 @@ public:
     static ExpaConstant *New(const Token *token, const std::string &val) { return new ExpaConstant(token, val); }
 
     virtual void Serialize(std::ostream &os);
+
+    virtual llvm::Value *codegen();
 
 };
 

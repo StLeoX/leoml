@@ -7,22 +7,33 @@
 
 #include "ParseTree.h"
 
-int ntab = 0;
-#define INC ntab++
-#define DEC ntab--
-#define TAB for (int i = 0; i < ntab; ++i) {os<<"  ";}
-#define LF os<<'\n'
-#define ILT INC;LF;TAB
-#define LT LF;TAB
+static int ntab = 0;
+
+static inline void INC() { ntab++; }
+
+static inline void DEC() { ntab--; }
+
+static inline void TAB(std::ostream &os) { for (int i = 0; i < ntab; ++i) { os << "  "; }}
+
+static inline void ILT(std::ostream &os) {
+    ntab++;
+    os << '\n';
+    TAB(os);
+}
+
+static inline void LT(std::ostream &os) {
+    os << '\n';
+    TAB(os);
+}
 
 void Program::Serialize(std::ostream &os) {
     os << "+ program";
-    INC;
+    INC();
     for (auto stmt:*stmtList) {
-        LT;
+        LT(os);
         stmt->Serialize(os);
     }
-    DEC;
+    DEC();
 }
 
 void Stmt::Serialize(std::ostream &os) {
@@ -32,23 +43,23 @@ void Stmt::Serialize(std::ostream &os) {
             break;
         case VarStmt:
             os << "+ var single";
-            ILT;
+            ILT(os);
             var->Serialize(os);
-            DEC;
+            DEC();
             break;
         case VarAssignStmt:
             os << "+ var define";
-            ILT;
+            ILT(os);
             os << "+ left value";
-            ILT;
+            ILT(os);
             var->Serialize(os);
-            DEC;
-            LT;
+            DEC();
+            LT(os);
             os << "+ right value";
-            ILT;
+            ILT(os);
             exp->Serialize(os);
-            DEC;
-            DEC;
+            DEC();
+            DEC();
             break;
         default:
             CompilePanic("unreachable");
@@ -67,14 +78,14 @@ void Exp::Serialize(std::ostream &os) {
     else if (expbList->size() == 1) {
         expbList->front()->Serialize(os);
     } else {
-        LT;
+        LT(os);
         os << "+ expb list";
-        INC;
+        INC();
         for (auto expb:*expbList) {
-            LT;
+            LT(os);
             expb->Serialize(os);
         }
-        DEC;
+        DEC();
     }
 }
 
@@ -89,22 +100,22 @@ void Func::Serialize(std::ostream &os) {
     os << "+ func define";
     os << "  name:  " << name;
     os << "  type: " << fun->GetName();
-    ILT;
+    ILT(os);
     os << "+ param list";
-    INC;
+    INC();
     for (auto var:*paramList) {
-        LT;
+        LT(os);
         var->Serialize(os);
     }
-    DEC;
-    LT;
+    DEC();
+    LT(os);
     os << "+ body";
     if (body != nullptr) {
-        ILT;
+        ILT(os);
         body->Serialize(os);
-        DEC;
+        DEC();
     }
-    DEC;
+    DEC();
 }
 
 void Func::TypeCheck() {
@@ -123,15 +134,15 @@ void Func::TypeCheck() {
 void FuncCall::Serialize(std::ostream &os) {
     os << "+ func call";
     os << "  name:  " << name;
-    ILT;
+    ILT(os);
     if (argList != nullptr) {
         os << "+ arg list";
-        INC;
+        INC();
         for (auto expb:*argList) {
-            LT;
+            LT(os);
             expb->Serialize(os);
         }
-        DEC;
+        DEC();
     }
     if (body != nullptr) {
         os << "+ body";
@@ -141,39 +152,39 @@ void FuncCall::Serialize(std::ostream &os) {
         os << "+ retValue";
         retValue->Serialize(os);
     }
-    DEC;
+    DEC();
 }
 
-void FuncCall::TypeCheck(Func *fund) {
-    fun->retType->ExpectOrInfer(fund->GetType()->kind, _root);
-    if (argList->size() != fund->paramList->size()) { CompileError(_root, "the count of arguments is unmatched"); }
+void FuncCall::TypeCheck() {
+    fun->retType->ExpectOrInfer(proto->GetType()->kind, _root);
+    if (argList->size() != proto->paramList->size()) { CompileError(_root, "the count of arguments is unmatched"); }
     auto ap = argList->begin();
-    auto pp = fund->paramList->begin();
-    while (ap != argList->end() && pp != fund->paramList->end()) {
+    auto pp = proto->paramList->begin();
+    while (ap != argList->end() && pp != proto->paramList->end()) {
         (*ap)->GetType()->Expect((*pp)->GetType()->kind, (*ap)->GetRoot());
         ap++;
         pp++;
     }
     // after validation, then assign
-    fun = fund->fun;
+    fun = proto->fun;
 }
 
 void ExpbBinary::Serialize(std::ostream &os) {
     os << "+ expbBinary";
     os << "  type: " << Type::KindLookup(_type->kind);
-    ILT;
+    ILT(os);
     os << "| op  " << Token::TagLookup(_op);
-    LT;
+    LT(os);
     os << "+ lhs";
-    ILT;
+    ILT(os);
     _lhs->Serialize(os);
-    DEC;
-    LT;
+    DEC();
+    LT(os);
     os << "+ rhs";
-    ILT;
+    ILT(os);
     _rhs->Serialize(os);
-    DEC;
-    DEC;
+    DEC();
+    DEC();
 }
 
 ExpbBinary::~ExpbBinary() {
@@ -268,14 +279,14 @@ void ExpbBinary::ScopeCheck() {
 
 void ExpbUnary::Serialize(std::ostream &os) {
     os << "+ expbUnary";
-    ILT;
+    ILT(os);
     os << "| op  " << Token::TagLookup(_op);
-    LT;
+    LT(os);
     os << "+ oprand";
-    ILT;
+    ILT(os);
     _oprand->Serialize(os);
-    DEC;
-    DEC;
+    DEC();
+    DEC();
 }
 
 void ExpbUnary::TypeCheck() {
@@ -302,34 +313,34 @@ void ExpbUnary::TypeCheck() {
 
 void ExpbCons::Serialize(std::ostream &os) {
     os << "+ expbCons";
-    ILT;
+    ILT(os);
     os << "+ first element";
-    ILT;
+    ILT(os);
     _first->Serialize(os);
-    DEC;
-    LT;
+    DEC();
+    LT(os);
     os << "+ second element";
-    ILT;
+    ILT(os);
     _second->Serialize(os);
-    DEC;
-    DEC;
+    DEC();
+    DEC();
 }
 
 ExpbCons::~ExpbCons() { delete _first, _second; }
 
 void ExpbCompound::Serialize(std::ostream &os) {
     os << "+ expbCompound";
-    ILT;
+    ILT(os);
     os << "+ first clause";
-    ILT;
+    ILT(os);
     _first->Serialize(os);
-    DEC;
-    LT;
+    DEC();
+    LT(os);
     os << "+ second clause";
-    ILT;
+    ILT(os);
     _second->Serialize(os);
-    DEC;
-    DEC;
+    DEC();
+    DEC();
 }
 
 ExpbCompound::~ExpbCompound() { delete _first, _second; }
@@ -341,34 +352,34 @@ void ExpbCompound::TypeCheck() {
 
 void ExpbFst::Serialize(std::ostream &os) {
     os << "+ expbFst";
-    ILT;
+    ILT(os);
     os << "+ first element";
-    ILT;
+    ILT(os);
     _first->Serialize(os);
-    DEC;
-    LT;
+    DEC();
+    LT(os);
     os << "+ second element";
-    ILT;
+    ILT(os);
     _second->Serialize(os);
-    DEC;
-    DEC;
+    DEC();
+    DEC();
 }
 
 ExpbFst::~ExpbFst() { delete _first, _second; }
 
 void ExpbSnd::Serialize(std::ostream &os) {
     os << "+ expbSnd";
-    ILT;
+    ILT(os);
     os << "+ first element";
-    ILT;
+    ILT(os);
     _first->Serialize(os);
-    DEC;
-    LT;
+    DEC();
+    LT(os);
     os << "+ second element";
-    ILT;
+    ILT(os);
     _second->Serialize(os);
-    DEC;
-    DEC;
+    DEC();
+    DEC();
 }
 
 ExpbSnd::~ExpbSnd() { delete _first, _second; }
@@ -404,22 +415,22 @@ void ExpaConstant::Serialize(std::ostream &os) {
 
 void ExpaIf::Serialize(std::ostream &os) {
     os << "+ expaIf";
-    ILT;
+    ILT(os);
     os << "+ condition expr";
-    LT;
+    LT(os);
     _cond->Serialize(os);
-    LT;
+    LT(os);
     os << "+ then expr";
-    LT;
+    LT(os);
     _then->Serialize(os);
 
     if (_els != nullptr) {
-        LT;
+        LT(os);
         os << "+ else expr";
-        LT;
+        LT(os);
         _els->Serialize(os);
     }
-    DEC;
+    DEC();
 }
 
 void ExpaIf::TypeCheck() {
@@ -493,15 +504,15 @@ void ExpaIf::ScopeCheck() {
 
 void ExpaWhile::Serialize(std::ostream &os) {
     os << "+ expaWhile";
-    ILT;
+    ILT(os);
     os << "+ condition expr";
-    LT;
+    LT(os);
     _cond->Serialize(os);
-    LT;
+    LT(os);
     os << "+ body";
-    LT;
+    LT(os);
     _body->Serialize(os);
-    DEC;
+    DEC();
 }
 
 void ExpaWhile::TypeCheck() {
@@ -539,24 +550,24 @@ void ExpaWhile::ScopeCheck() {
 
 void ExpaLet::Serialize(std::ostream &os) {
     os << "+ expaLet";
-    ILT;
+    ILT(os);
     os << "+ exp pairs";
-    INC;
+    INC();
     for (auto item:*expPairList) {
-        LT;
+        LT(os);
         item.first->Serialize(os);
         if (item.second != nullptr) {
-            LT;
+            LT(os);
             item.second->Serialize(os);
         }
     }
-    DEC;
-    LT;
+    DEC();
+    LT(os);
     os << "+ body";
-    ILT;
+    ILT(os);
     body->Serialize(os);
-    DEC;
-    DEC;
+    DEC();
+    DEC();
 }
 
 void ExpaLet::TypeCheck() {

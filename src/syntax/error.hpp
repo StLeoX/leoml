@@ -15,7 +15,7 @@ inline void CompilePanic(const char *msg) {
             ANSI_COLOR_RED
             "\n===Compile Panic===\n"
             ANSI_COLOR_RESET);
-    fprintf(stderr, msg);
+    fprintf(stderr, "%s\n", msg);
     std::abort();
 }
 

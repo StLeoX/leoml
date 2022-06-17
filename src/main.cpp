@@ -4,21 +4,26 @@
 #include <filesystem>
 
 #include "syntax/Token.h"
-#include "syntax/Token.cpp"
 #include "syntax/Lexer.h"
-#include "syntax/Lexer.cpp"
 #include "syntax/Parser.h"
-#include "syntax/Parser.cpp"
 #include "syntax/ParseTree.h"
-#include "syntax/ParseTree.cpp"
 #include "syntax/Scope.h"
-#include "syntax/Scope.cpp"
 #include "syntax/Type.h"
+#include "jit.h"
+
+#include "syntax/Token.cpp"
+#include "syntax/Lexer.cpp"
+#include "syntax/Parser.cpp"
+#include "syntax/ParseTree.cpp"
+#include "syntax/Scope.cpp"
 #include "syntax/Type.cpp"
 
-std::string source_path = "";
-std::string output_dir = "";  // "." for example
-std::list<std::string> source_list{};
+ #include "jit.cpp"
+
+static std::string source_path = "";
+static std::string output_dir = "";  // "." for example
+static std::list<std::string> source_list{};
+static Program *program;
 
 void Usage() {
     printf("Usage: leoml [-o <output>] [options] <source>\n"
@@ -26,6 +31,8 @@ void Usage() {
            "\t-h      Print this help message.\n"
            "\t-l      Tokenize the source.\n"
            "\t-p      Parse the source.\n"
+           "\t-e      Evaluate the source.\n"
+           "\t-i      Interactive mode, not support yet.\n"
            "\t-o      Specify output directory. Otherwise print to the stdout.\n");
     exit(0);
 }
@@ -92,7 +99,10 @@ void Parse() {
             auto outpath = std::filesystem::absolute(output_dir + "/" + name + ".ast.txt");
             std::ofstream out{outpath};
             parser->Serialize(out);
-        } else { parser->Serialize(std::cout); }
+        } else {
+            program = parser->GetProgram();
+            parser->Serialize(std::cout);
+        }
         delete ts, parser;
     }
 }
@@ -119,6 +129,13 @@ int main(int argc, char *argv[]) {
             break;
         case 'p':
             Parse();
+            break;
+        case 'e':
+            Parse();
+            Jit(*program);
+            break;
+        case 'i':
+            Repl();
             break;
         default:
             break;
