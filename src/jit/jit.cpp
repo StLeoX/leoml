@@ -46,7 +46,6 @@ enum Tok {
 
     // commands
     tok_def = -2,
-    tok_extern = -3,
 
     // primary
     tok_identifier = -4,
@@ -70,10 +69,8 @@ static int gettok() {
         while (isalnum((LastChar = getchar())))
             IdentifierStr += LastChar;
 
-        if (IdentifierStr == "def")
+        if (IdentifierStr == "let")
             return tok_def;
-        if (IdentifierStr == "extern")
-            return tok_extern;
         return tok_identifier;
     }
 
@@ -361,7 +358,7 @@ static std::unique_ptr<ExprAST> ParseExpression() {
 }
 
 /// prototype
-///   ::= id '(' id* ')'
+///   ::= id '(' id (, id )* ')'
 static std::unique_ptr<PrototypeAST> ParsePrototype() {
     if (CurTok != tok_identifier)
         return LogErrorP("Expected function name in prototype");
@@ -373,8 +370,13 @@ static std::unique_ptr<PrototypeAST> ParsePrototype() {
         return LogErrorP("Expected '(' in prototype");
 
     std::vector<std::string> ArgNames;
-    while (getNextToken() == tok_identifier)
+    if (getNextToken() == tok_identifier) {
         ArgNames.push_back(IdentifierStr);
+        while (getNextToken() == ',') {
+            getNextToken();
+            ArgNames.push_back(IdentifierStr);
+        }
+    }
     if (CurTok != ')')
         return LogErrorP("Expected ')' in prototype");
 
@@ -384,12 +386,16 @@ static std::unique_ptr<PrototypeAST> ParsePrototype() {
     return std::make_unique<PrototypeAST>(FnName, std::move(ArgNames));
 }
 
-/// definition ::= 'def' prototype expression
+/// definition ::= 'let' prototype expression
 static std::unique_ptr<FunctionAST> ParseDefinition() {
-    getNextToken(); // eat def.
+    getNextToken(); // eat let.
     auto Proto = ParsePrototype();
     if (!Proto)
         return nullptr;
+
+    if (CurTok != '=')
+        LogError("expected '='");
+    getNextToken(); // eat =.
 
     if (auto E = ParseExpression())
         return std::make_unique<FunctionAST>(std::move(Proto), std::move(E));
@@ -407,11 +413,6 @@ static std::unique_ptr<FunctionAST> ParseTopLevelExpr() {
     return nullptr;
 }
 
-/// external ::= 'extern' prototype
-static std::unique_ptr<PrototypeAST> ParseExtern() {
-    getNextToken(); // eat extern.
-    return ParsePrototype();
-}
 
 //===----------------------------------------------------------------------===//
 // Code Generation
@@ -591,20 +592,6 @@ static void HandleDefinition() {
     }
 }
 
-static void HandleExtern() {
-    if (auto ProtoAST = ParseExtern()) {
-        if (auto *FnIR = ProtoAST->codegen()) {
-            fprintf(stderr, "Read extern: ");
-            FnIR->print(errs());
-            fprintf(stderr, "\n");
-            FunctionProtos[ProtoAST->getName()] = std::move(ProtoAST);
-        }
-    } else {
-        // Skip token for error recovery.
-        getNextToken();
-    }
-}
-
 static void HandleTopLevelExpression() {
     // Evaluate a top-level expression into an anonymous function.
     if (auto FnAST = ParseTopLevelExpr()) {
@@ -632,21 +619,19 @@ static void HandleTopLevelExpression() {
     }
 }
 
-/// top ::= definition | external | expression | ';'
+/// top ::= definition | expression | ';'
 static void MainLoop() {
     while (true) {
-        fprintf(stderr, "ready> ");
+        fprintf(stderr, ">>> ");
         switch (CurTok) {
             case tok_eof:
                 return;
             case ';': // ignore top-level semicolons.
+                getNextToken(); // eat ';'
                 getNextToken();
                 break;
             case tok_def:
                 HandleDefinition();
-                break;
-            case tok_extern:
-                HandleExtern();
                 break;
             default:
                 HandleTopLevelExpression();

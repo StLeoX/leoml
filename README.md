@@ -4,7 +4,13 @@
 
 StLeoX's OCaml-syntax-like language compiler. Only Parser, TypeCheker currently.
 
-BackEnd: Maybe an Interpreter? Maybe linked to LLVM?
+BackEnd: An Interpreter, combined with llvm JIT framework.
+
+#### Platform
+
+> Ubuntu 20.04  
+> clang 11.0.0  
+> llvm 11.0.0
 
 ## Usage
 
@@ -215,7 +221,7 @@ Highest --> Lowest:
 
 1.Eval: An evaluater to eval the Expr, through visiting the tree from bottom.
 
-2.CodeGen:
+2.CodeGen: Combine the llvm JIT Framework.
 
 #### Passed
 
@@ -225,7 +231,22 @@ Highest --> Lowest:
 
 ## FAQs
 
-#### 1.How to conduct verification?
+#### 1.How to build the project?
+
+First, make sure `cmake` & `make` installed.  
+For full parser target, do this:
+> cd src  
+> cmake .  
+> make leoml
+
+For JIT target, do this:
+> cd src/jit  
+> make leoml
+
+#### 2.How to conduct verification?
+
+**Note: auto tester for parser is ready.  
+As for jit REPL, you should input manually.**
 
 First, you should install the Python3 environment.
 
@@ -236,6 +257,28 @@ Then, in CLI input this to run the automated tester. Notice that you should have
 
 Finally, the tester will display the test report.
 
-#### 2.How to contribute?
+#### 3.How to contribute?
 
 Emm...free for you to modify the source code.
+
+## Demos & Snapshots
+
+Given leoml source like:
+
+```
+let sum(a,b)=a+b;;
+
+let f1(a,b,c)=if a then b else c;;
+
+let f2(a,b)=while a do b done;;
+```
+
+After tokenizing:  
+![lex01](./doc/asset/lex01.png)
+
+After parsing:  
+![parse01](./doc/asset/parse01.png)
+
+Interaction with REPL:  
+![jit01](./doc/asset/jit01.png)
+![jit02](./doc/asset/jit02.png)

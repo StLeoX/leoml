@@ -16,8 +16,8 @@
 #include "syntax/Scope.cpp"
 #include "syntax/Type.cpp"
 
-#include "jit/jit.h"
-#include "jit/jit.cpp"
+//#include "jit/jit.h"
+//#include "jit/jit.cpp"
 
 static std::string source_path = "";
 static std::string output_dir = "";  // "." for example
@@ -99,7 +99,7 @@ void Parse() {
             std::ofstream out{outpath};
             parser->Serialize(out);
         } else {
-            program = parser->GetProgram();
+            TheProgram = parser->GetProgram();
             parser->Serialize(std::cout);
         }
         delete ts, parser;
