@@ -1,1 +1,1 @@
-set(SYNTAX Token.h Token.cpp Lexer.h Lexer.cpp Parser.h Parser.cpp ParseTree.h ParseTree.cpp Scope.h Scope.cpp Type.h Type.cpp error.hpp)
+set(SYNTAX Token.cpp Lexer.cpp Parser.cpp ParseTree.cpp Scope.cpp Type.cpp)

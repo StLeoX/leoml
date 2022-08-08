@@ -6,14 +6,11 @@
 #ifndef LEOML_TYPE_H
 #define LEOML_TYPE_H
 
+#include "Scope.h"
 #include <iostream>
 #include <typeinfo>
 #include <unordered_map>
 #include <list>
-
-#include "Scope.h"
-#include "error.hpp"
-
 
 /// Type
 // simple type
@@ -43,15 +40,7 @@ public:
 
     /// Expect
     // expect specific type at this token
-    bool Expect(int expect, const Token *token) {
-        if (kind != expect) {
-            CompileError(token, "Type `%s` expected, but got `%s`",
-                         Type::KindLookup(expect).c_str(),
-                         Type::KindLookup(kind).c_str());
-            return false;
-        }
-        return true;
-    }
+    bool Expect(int expect, const Token *token);
 
     /// Expect or Infer
     // If type at this token is T_Unknown, then set it to expect, else Expect it.
@@ -63,9 +52,8 @@ public:
         }
     }
 
-    static void UnExpect(int unexpect, const Token *token) {
-        CompileError(token, "Unexpected type `%s` found here", Type::KindLookup(unexpect).c_str());
-    }
+    /// opposite to Expect
+    static void UnExpect(int unexpect, const Token *token);
 
     bool IsUnknown() const { return kind == T_Unknown; }
 

@@ -5,7 +5,7 @@
 //
 
 
-#include "ParseTree.h"
+#include "syntax/ParseTree.h"
 
 static int ntab = 0;
 

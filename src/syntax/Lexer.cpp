@@ -3,7 +3,7 @@
 //
 
 
-#include "Lexer.h"
+#include "syntax/Lexer.h"
 
 Token *Lexer::MakeToken(int tag) {
     _token.tag = tag;

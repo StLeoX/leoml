@@ -3,8 +3,8 @@
 //
 
 
-#include "Scope.h"
-#include "ParseTree.h"
+#include "syntax/Scope.h"
+#include "syntax/ParseTree.h"
 
 Var *Scope::Find(const Token *token) {
     auto ret = Find(token->str);

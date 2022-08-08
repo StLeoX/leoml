@@ -3,7 +3,7 @@
 //
 
 
-#include "Parser.h"
+#include "syntax/Parser.h"
 
 /// Parse Float
 // ParseConstant aux
@@ -386,6 +386,10 @@ Program *Parser::ParseProgram() {
         ret->stmtList->push_back(ParseStmt());
     }
     return ret;
+}
+
+void Parser::Parse() {
+    _program = ParseProgram();
 }
 
 void Parser::Serialize(std::ostream &os) {

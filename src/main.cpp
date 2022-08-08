@@ -16,9 +16,6 @@
 #include "syntax/Scope.cpp"
 #include "syntax/Type.cpp"
 
-//#include "jit/jit.h"
-//#include "jit/jit.cpp"
-
 static std::string source_path = "";
 static std::string output_dir = "";  // "." for example
 static std::list<std::string> source_list{};
@@ -79,7 +76,9 @@ void Tokenize() {
             std::string outpath = output_dir + "/" + name + ".ts.txt";
             std::ofstream out{outpath};
             ts->Serialize(out);
-        } else { ts->Serialize(std::cout); }
+        } else {
+            ts->Serialize(std::cout);
+        }
         delete ts, lexer;
     }
 }
