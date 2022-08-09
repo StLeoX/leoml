@@ -4,6 +4,7 @@
 
 
 #include "syntax/Parser.h"
+#include "syntax/Error.h"
 
 /// Parse Float
 // ParseConstant aux

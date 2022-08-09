@@ -6,6 +6,7 @@
 
 
 #include "syntax/ParseTree.h"
+#include "syntax/Error.h"
 
 static int ntab = 0;
 

@@ -4,6 +4,7 @@
 
 
 #include "syntax/Lexer.h"
+#include "syntax/Error.h"
 
 Token *Lexer::MakeToken(int tag) {
     _token.tag = tag;

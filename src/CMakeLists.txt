@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.8)
 project(leoml)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 11)
 
 add_subdirectory(syntax)
 
@@ -9,6 +9,11 @@ add_subdirectory(syntax)
 # include_directories(/lib/llvm-11/include)
 # project hdrs
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../include)
+# project libs
+link_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
+link_directories(${CMAKE_CURRENT_SOURCE_DIR}/syntax)
+link_directories(${CMAKE_CURRENT_SOURCE_DIR}/cmake-build-debug/syntax) # external build
 
 set(LLVM_LINK_COMPONENTS
     Analysis
@@ -24,4 +29,6 @@ set(LLVM_LINK_COMPONENTS
     )
 
 # leoml
-add_executable(leoml main.cpp ${SYNTAX})
+add_executable(leoml main.cpp)
+target_link_libraries(leoml
+    libleoml_syntax.a)

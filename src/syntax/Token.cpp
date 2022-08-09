@@ -4,7 +4,7 @@
 
 
 #include "syntax/Token.h"
-#include "syntax/error.hpp"
+#include "syntax/Error.h"
 
 const std::unordered_map<int, const char *> Token::TagMap{
         {'(',           ")"},

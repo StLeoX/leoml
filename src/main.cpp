@@ -1,4 +1,3 @@
-#include <fstream>
 #include <iostream>
 #include <list>
 
@@ -8,13 +7,6 @@
 #include "syntax/ParseTree.h"
 #include "syntax/Scope.h"
 #include "syntax/Type.h"
-
-#include "syntax/Token.cpp"
-#include "syntax/Lexer.cpp"
-#include "syntax/Parser.cpp"
-#include "syntax/ParseTree.cpp"
-#include "syntax/Scope.cpp"
-#include "syntax/Type.cpp"
 
 static std::string source_path = "";
 static std::string output_dir = "";  // "." for example

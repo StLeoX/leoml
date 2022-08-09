@@ -1,44 +1,20 @@
 #ifndef LEOML_ERROR_H
 #define LEOML_ERROR_H
 
-#include "Token.h"
+#include "syntax/Token.h"
+#include <cstdlib>
 #include <cstdio>
+#include <cstdarg>
 
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"
 #define ANSI_COLOR_BLUE    "\x1b[34m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
 
-
-inline void CompilePanic(const char *msg) {
-    fprintf(stderr,
-            ANSI_COLOR_RED
-            "\n===Compile Panic===\n"
-            ANSI_COLOR_RESET);
-    fprintf(stderr, "%s\n", msg);
-    std::abort();
-}
-
-void CompileError(const char *format, ...) {
-    fprintf(stderr,
-            ANSI_COLOR_RED
-            "Compile Error: "
-            ANSI_COLOR_RESET);
-
-    va_list args;
-    va_start(args, format);
-    vfprintf(stderr, format, args);
-    va_end(args);
-
-    fprintf(stderr, "\n");
-
-    exit(-1);
-}
-
 // Template of CompileError
-static void VError(const SourceLocation &loc,
-                   const char *format,
-                   va_list args) {
+static void TCompileError(const SourceLocation &loc,
+                          const char *format,
+                          va_list args) {
     assert(loc.filename);
     fprintf(stderr,
             "%s:%d:%d: "
@@ -71,21 +47,18 @@ static void VError(const SourceLocation &loc,
     std::abort();
 }
 
-
 void CompileError(const SourceLocation &loc, const char *format, ...) {
     va_list args;
     va_start(args, format);
-    VError(loc, format, args);
+    TCompileError(loc, format, args);
     va_end(args);
 }
-
 
 void CompileError(const Token *tok, const char *format, ...) {
     va_list args;
     va_start(args, format);
-    VError(tok->loc, format, args);
+    TCompileError(tok->loc, format, args);
     va_end(args);
 }
-
 
 #endif // LEOML_ERROR_H

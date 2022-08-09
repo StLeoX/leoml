@@ -7,7 +7,6 @@
 #define LEOML_LEXER_H
 
 #include "Token.h"
-#include "error.hpp"
 #include <cassert>
 #include <cstring>
 

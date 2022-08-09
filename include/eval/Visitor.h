@@ -9,7 +9,6 @@
 #define LEOML_VISITOR_H
 
 #include "../syntax/ParseTree.h"
-#include "../syntax/error.hpp"
 
 class Visitor {
 public:

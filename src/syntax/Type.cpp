@@ -4,7 +4,7 @@
 
 
 #include "syntax/Type.h"
-#include "syntax/error.hpp"
+#include "syntax/Error.h"
 
 const std::unordered_map<int, const char *> Type::KindMap{
         {T_Int,     "int"},
